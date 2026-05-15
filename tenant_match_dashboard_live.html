@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tenant Match Dashboard — Live CRM Data</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Archivo:ital,wght@0,400;0,500;0,600;1,400&family=Archivo+Narrow:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0e0f0c; --bg2: #161714; --bg3: #1e1f1c; --bg4: #252622;
+  --border: rgba(255,255,255,0.07); --border2: rgba(255,255,255,0.12);
+  --text: #e8e6df; --muted: #7a7870; --muted2: #5a5850;
+  --gold: #c9a84c; --gold2: #e8c76a;
+  --green: #4caf7d; --green-bg: rgba(76,175,125,0.12);
+  --red: #e05252; --red-bg: rgba(224,82,82,0.1);
+  --amber: #d4833a; --amber-bg: rgba(212,131,58,0.12);
+  --blue: #5b9bd4; --blue-bg: rgba(91,155,212,0.1);
+  --purple: #9b7fd4; --purple-bg: rgba(155,127,212,0.1);
+  --serif: 'Bebas Neue', sans-serif;
+  --body: 'Archivo', sans-serif;
+  --narrow: 'Archivo Narrow', sans-serif;
+}
+html { font-size: 14px; }
+body { background: var(--bg); color: var(--text); font-family: var(--body); min-height: 100vh; overflow-x: hidden; }
+
+.topbar { display:flex; align-items:center; justify-content:space-between; padding:0 24px; height:52px; border-bottom:1px solid var(--border); position:sticky; top:0; z-index:100; background:var(--bg); }
+.brand-name { font-family:var(--serif); font-size:20px; letter-spacing:0.04em; }
+.brand-sub { font-family:var(--narrow); font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--muted); margin-left:10px; }
+.topbar-right { display:flex; align-items:center; gap:16px; }
+.top-stat { text-align:right; }
+.top-stat-val { font-family:var(--serif); font-size:18px; color:var(--gold); line-height:1; }
+.top-stat-label { font-family:var(--narrow); font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); }
+.run-btn { background:var(--gold); color:#0e0f0c; border:none; padding:7px 16px; font-family:var(--narrow); font-size:11px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; cursor:pointer; border-radius:2px; }
+.run-btn:hover { background:var(--gold2); }
+
+/* DATA GAP BANNER */
+.data-banner { background:var(--amber-bg); border-bottom:1px solid rgba(212,131,58,0.3); padding:8px 24px; display:flex; align-items:center; gap:10px; font-family:var(--narrow); font-size:11px; color:var(--amber); }
+.data-banner strong { font-weight:600; }
+
+.main { display:grid; grid-template-columns:280px 1fr; height:calc(100vh - 86px); }
+.left { border-right:1px solid var(--border); overflow-y:auto; background:var(--bg2); }
+.panel-header { padding:14px 16px 10px; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--bg2); z-index:10; }
+.panel-title { font-family:var(--narrow); font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+.search-input { width:100%; background:var(--bg3); border:1px solid var(--border2); color:var(--text); padding:6px 10px; font-family:var(--narrow); font-size:12px; border-radius:2px; outline:none; }
+.search-input:focus { border-color:var(--gold); }
+.search-input::placeholder { color:var(--muted2); }
+
+/* FILTER PILLS */
+.filter-pills { display:flex; gap:4px; flex-wrap:wrap; padding:8px 16px; border-bottom:1px solid var(--border); }
+.pill { font-family:var(--narrow); font-size:9px; letter-spacing:0.08em; text-transform:uppercase; padding:3px 8px; border-radius:10px; border:1px solid var(--border2); color:var(--muted); cursor:pointer; }
+.pill.active { border-color:var(--gold); color:var(--gold); background:rgba(201,168,76,0.1); }
+
+.tenant-item { padding:11px 16px; border-bottom:1px solid var(--border); cursor:pointer; transition:background 0.1s; display:flex; align-items:flex-start; gap:10px; }
+.tenant-item:hover { background:var(--bg3); }
+.tenant-item.active { background:var(--bg4); border-left:2px solid var(--gold); }
+.tenant-avatar { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:var(--serif); font-size:12px; flex-shrink:0; margin-top:1px; }
+.av-gold { background:rgba(201,168,76,0.15); color:var(--gold); }
+.av-green { background:rgba(76,175,125,0.15); color:var(--green); }
+.av-blue { background:rgba(91,155,212,0.15); color:var(--blue); }
+.av-red { background:rgba(224,82,82,0.15); color:var(--red); }
+.av-amber { background:rgba(212,131,58,0.15); color:var(--amber); }
+.av-purple { background:rgba(155,127,212,0.15); color:var(--purple); }
+.tenant-info { flex:1; min-width:0; }
+.tenant-name { font-size:12px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:1px; }
+.tenant-company { font-family:var(--narrow); font-size:10px; color:var(--gold); margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.tenant-concept { font-family:var(--narrow); font-size:10px; color:var(--muted); }
+.tenant-match-count { font-family:var(--serif); font-size:18px; color:var(--gold); line-height:1; flex-shrink:0; }
+.match-label { font-family:var(--narrow); font-size:9px; color:var(--muted2); text-transform:uppercase; text-align:right; }
+
+/* DATA GAPS */
+.gap-dot { display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--amber); margin-right:4px; vertical-align:middle; }
+
+/* RIGHT */
+.right { overflow-y:auto; }
+.detail-header { padding:20px 24px 16px; border-bottom:1px solid var(--border); }
+.detail-name { font-family:var(--serif); font-size:32px; letter-spacing:0.02em; line-height:1; margin-bottom:3px; }
+.detail-company { font-family:var(--narrow); font-size:12px; color:var(--gold); letter-spacing:0.08em; margin-bottom:3px; }
+.detail-concept { font-family:var(--narrow); font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); margin-bottom:12px; }
+.req-row { display:flex; flex-wrap:wrap; gap:16px; margin-bottom:12px; }
+.req-item {}
+.req-label { font-family:var(--narrow); font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted2); margin-bottom:2px; }
+.req-value { font-size:12px; font-weight:500; }
+.req-missing { font-size:11px; color:var(--amber); font-family:var(--narrow); font-style:italic; }
+
+/* GAP CARD */
+.gap-card { margin:0 24px 0; padding:10px 14px; background:var(--amber-bg); border:1px solid rgba(212,131,58,0.25); border-radius:3px; font-family:var(--narrow); font-size:11px; color:var(--amber); line-height:1.6; }
+.gap-card strong { font-weight:600; display:block; margin-bottom:3px; }
+
+.section-bar { display:flex; align-items:center; justify-content:space-between; padding:12px 24px 10px; border-bottom:1px solid var(--border); }
+.section-bar-title { font-family:var(--narrow); font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--muted); }
+.filter-tabs { display:flex; gap:2px; }
+.filter-tab { padding:3px 9px; font-family:var(--narrow); font-size:10px; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer; border-radius:2px; border:1px solid transparent; color:var(--muted); background:none; }
+.filter-tab.active { border-color:var(--border2); color:var(--text); background:var(--bg3); }
+
+.properties { padding:16px 24px; display:flex; flex-direction:column; gap:10px; }
+.prop-card { background:var(--bg2); border:1px solid var(--border); border-radius:3px; overflow:hidden; animation:slideIn 0.25s ease both; }
+@keyframes slideIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+.prop-card.own { border-left:3px solid var(--gold); }
+.prop-card-inner { display:flex; align-items:stretch; }
+.score-col { width:72px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:12px 6px; border-right:1px solid var(--border); flex-shrink:0; gap:2px; }
+.score-ring { position:relative; width:46px; height:46px; }
+.score-ring svg { transform:rotate(-90deg); }
+.score-num { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-family:var(--serif); font-size:14px; line-height:1; }
+.score-word { font-family:var(--narrow); font-size:8px; letter-spacing:0.06em; text-transform:uppercase; text-align:center; }
+.prop-body { flex:1; padding:12px 16px; min-width:0; }
+.prop-top { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:6px; }
+.prop-name { font-size:13px; font-weight:600; }
+.prop-address { font-family:var(--narrow); font-size:10px; color:var(--muted); margin-top:1px; }
+.own-badge { font-family:var(--narrow); font-size:9px; letter-spacing:0.1em; text-transform:uppercase; padding:2px 7px; background:rgba(201,168,76,0.15); color:var(--gold); border-radius:2px; white-space:nowrap; flex-shrink:0; }
+.prop-specs { display:flex; gap:16px; flex-wrap:wrap; margin-bottom:8px; }
+.spec-label { font-family:var(--narrow); font-size:9px; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted2); }
+.spec-value { font-size:11px; font-weight:500; }
+.prop-criteria { display:flex; gap:5px; flex-wrap:wrap; }
+.crit { font-family:var(--narrow); font-size:9px; padding:2px 6px; border-radius:2px; }
+.crit-pass { background:var(--green-bg); color:var(--green); }
+.crit-fail { background:var(--red-bg); color:var(--red); }
+.crit-warn { background:var(--amber-bg); color:var(--amber); }
+.prop-actions-col { width:96px; border-left:1px solid var(--border); display:flex; flex-direction:column; flex-shrink:0; }
+.prop-action { flex:1; display:flex; align-items:center; justify-content:center; font-family:var(--narrow); font-size:10px; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer; background:none; border:none; color:var(--muted); transition:all 0.12s; }
+.prop-action:hover { background:var(--bg3); }
+.prop-action.send:hover { color:var(--green); }
+.prop-action.pass:hover { color:var(--red); }
+.prop-action-divider { height:1px; background:var(--border); flex-shrink:0; }
+
+.empty { text-align:center; padding:60px 40px; color:var(--muted); }
+.empty-title { font-family:var(--serif); font-size:26px; color:var(--muted2); margin-bottom:8px; }
+
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:200; align-items:center; justify-content:center; }
+.modal-overlay.open { display:flex; }
+.modal { background:var(--bg2); border:1px solid var(--border2); border-radius:4px; padding:24px; max-width:420px; width:90%; }
+.modal-title { font-family:var(--serif); font-size:24px; margin-bottom:4px; }
+.modal-sub { font-family:var(--narrow); font-size:11px; color:var(--muted); margin-bottom:16px; }
+.modal-preview { background:var(--bg3); border:1px solid var(--border); border-radius:3px; padding:12px; font-size:12px; line-height:1.7; color:var(--text); margin-bottom:14px; font-family:var(--narrow); white-space:pre-wrap; }
+.modal-channels { display:flex; gap:8px; margin-bottom:18px; }
+.channel-toggle { flex:1; padding:7px; border:1px solid var(--border2); border-radius:2px; background:none; color:var(--muted); font-family:var(--narrow); font-size:11px; letter-spacing:0.1em; text-transform:uppercase; cursor:pointer; }
+.channel-toggle.on { border-color:var(--gold); color:var(--gold); background:rgba(201,168,76,0.08); }
+.modal-btns { display:flex; gap:8px; justify-content:flex-end; }
+.modal-cancel { background:none; border:1px solid var(--border2); color:var(--muted); padding:7px 14px; font-family:var(--narrow); font-size:11px; letter-spacing:0.1em; text-transform:uppercase; cursor:pointer; border-radius:2px; }
+.modal-send { background:var(--gold); color:#0e0f0c; border:none; padding:7px 18px; font-family:var(--narrow); font-size:11px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; cursor:pointer; border-radius:2px; }
+
+.toast { position:fixed; bottom:20px; right:20px; background:var(--bg3); border:1px solid var(--green); color:var(--green); padding:9px 16px; font-family:var(--narrow); font-size:11px; border-radius:3px; z-index:300; opacity:0; transform:translateY(6px); transition:all 0.2s; pointer-events:none; }
+.toast.show { opacity:1; transform:translateY(0); }
+::-webkit-scrollbar { width:3px; } ::-webkit-scrollbar-thumb { background:var(--bg4); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div style="display:flex;align-items:baseline">
+    <span class="brand-name">MATCHBOARD</span>
+    <span class="brand-sub">Live CRM Data</span>
+  </div>
+  <div class="topbar-right">
+    <div class="top-stat"><div class="top-stat-val" id="stat-tenants">0</div><div class="top-stat-label">Contacts loaded</div></div>
+    <div class="top-stat"><div class="top-stat-val" id="stat-props">7</div><div class="top-stat-label">Properties</div></div>
+    <div class="top-stat"><div class="top-stat-val" id="stat-matches">—</div><div class="top-stat-label">Strong matches</div></div>
+    <button class="run-btn" onclick="runAll()">Run All Matches</button>
+  </div>
+</div>
+
+<div class="data-banner">
+  <span>⚠</span>
+  <span><strong>Live HubSpot data — 100 of 1,989 contacts loaded.</strong> Submarket data missing on most contacts. SF range missing on ~30%. No property inventory connected yet — using placeholder listings. <strong>These are the gaps Grant needs to fill.</strong></span>
+</div>
+
+<div class="main">
+  <div class="left">
+    <div class="panel-header">
+      <div class="panel-title">Your Tenant Contacts <span style="color:var(--muted2);font-size:9px">(from HubSpot)</span></div>
+      <input class="search-input" type="text" placeholder="Search by name or company..." oninput="filterTenants(this.value)">
+    </div>
+    <div class="filter-pills" id="concept-filters"></div>
+    <div id="tenant-list"></div>
+  </div>
+  <div class="right" id="right-panel">
+    <div class="empty">
+      <div class="empty-title">Select a Contact</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.6">Choose a tenant from the left to see<br>their requirements and matched properties.</div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-title">Send Site Survey</div>
+    <div class="modal-sub" id="modal-sub"></div>
+    <div class="modal-preview" id="modal-preview"></div>
+    <div class="modal-channels">
+      <button class="channel-toggle on" id="ch-email" onclick="toggleCh('email')">✉ Email</button>
+      <button class="channel-toggle on" id="ch-sms" onclick="toggleCh('sms')">💬 SMS</button>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeModal()">Cancel</button>
+      <button class="modal-send" onclick="confirmSend()">Send Now</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── REAL HUBSPOT CONTACTS ───────────────────────────────────────────────────
+const RAW = [
+  {id:"218542512932",name:"Kristy Darrenogue",company:"Skin Habit",email:"kristy@skinhabit.com",concept:"Retail",sf:"1k - 2k SF",submarket:"",liquor:"",type:""},
+  {id:"217026501206",name:"Brandon Zeto",company:"The Shawarma Guys",email:"brandon@theshawarmaguys.com",concept:"Fast Casual",sf:"2K - 3K SF",submarket:"",liquor:"",type:"Local"},
+  {id:"216704735006",name:"Elliot Patrick",company:"",email:"",concept:"Bar/Nightclub",sf:"1k - 2k SF",submarket:"",liquor:"Type 41 Beer & Wine",type:"Restaurant Buyer"},
+  {id:"214438560145",name:"Brittany Kikamaze",company:"Kyoto Coast Matcha",email:"brittany.kikamaze@kyotocoastmatcha.com",concept:"Quick Service",sf:"1k - 2k SF",submarket:"",liquor:"",type:"Local"},
+  {id:"213494033822",name:"Marvin Razouk",company:"",email:"r8marvin@gmail.com",concept:"Quick Service",sf:"1k - 2k SF",submarket:"",liquor:"",type:"Restaurant Buyer"},
+  {id:"211817250969",name:"Masayuki Matsumura",company:"Aburi Restaurants",email:"masayuki@aburirestaurants.com",concept:"Fast Casual / Full Service",sf:"1k - 3K SF",submarket:"",liquor:"",type:"Regional"},
+  {id:"208415071149",name:"Antonio Tayzon",company:"",email:"antonio.tayzon1983@gmail.com",concept:"Quick Service",sf:"1k - 2k SF",submarket:"",liquor:"",type:"Local"},
+  {id:"208339799973",name:"Rajan Singh",company:"Firangi",email:"",concept:"Full Service",sf:"1k - 2k SF",submarket:"",liquor:"Type 41 Beer & Wine",type:"Local"},
+  {id:"208087878730",name:"Ivan Cruz",company:"Papi's Birria",email:"papisbirria@gmail.com",concept:"Full Service",sf:"",submarket:"",liquor:"",type:"Restaurant Buyer"},
+  {id:"206967690766",name:"Lorenzo Grillo",company:"Nanesse Bakery",email:"nanessebakery@gmail.com",concept:"Quick Service",sf:"",submarket:"",liquor:"",type:"Local"},
+  {id:"194275572611",name:"Andy Villasuso",company:"Asado Gaucho",email:"andy@asadogaucho.com",concept:"Fast Casual / Full Service",sf:"2K - 3K SF",submarket:"",liquor:"Type 47 Full Liquor / Beer & Wine",type:"Local"},
+  {id:"169432856597",name:"Brian Cohen",company:"Boss Management Group",email:"brian@bossmanagementgroup.com",concept:"Bar/Nightclub",sf:"2K - 10k+ SF",submarket:"",liquor:"Type 47 / Type 48 Full Liquor",type:"Regional"},
+  {id:"181509772428",name:"Doris Choi",company:"",email:"dorisrep@gmail.com",concept:"Bar/Nightclub / Brewery",sf:"1k - 4k SF",submarket:"",liquor:"Type 47 Full Liquor",type:"Local"},
+  {id:"174442439180",name:"Spiro Tsaboukos",company:"The Breakfast Club",email:"oalitis@yahoo.com",concept:"Full Service",sf:"3k - 4k SF",submarket:"",liquor:"",type:"Local"},
+  {id:"151181277243",name:"Stefano Ercolano",company:"",email:"stefnoerc@gmail.com",concept:"Fast Casual / Full Service",sf:"1k - 4k SF",submarket:"",liquor:"",type:"Local"},
+  {id:"141889741218",name:"Ty Blana",company:"Epernay Bistro",email:"t.blana7@gmail.com",concept:"Full Service",sf:"1k - 2k SF",submarket:"",liquor:"",type:"Local"},
+  {id:"140882114206",name:"Josh Hester",company:"Hibachi Papi",email:"info@hibachipapi.com",concept:"Fast Casual",sf:"3k - 4k SF",submarket:"",liquor:"",type:"Local"},
+  {id:"140337699989",name:"Musty Kamci",company:"",email:"m.kamci@mhkig.com",concept:"Full Service",sf:"2K - 3K SF",submarket:"",liquor:"",type:"Local"},
+  {id:"140323462259",name:"Lupe Huerta",company:"",email:"adalbertosonmarket@gmail.com",concept:"Quick Service",sf:"1k - 2k SF",submarket:"",liquor:"",type:"Regional"},
+  {id:"140025131914",name:"Shahriar Younessi",company:"Yuzu Sushi",email:"s.younessi@gmail.com",concept:"Full Service / Fine Dining",sf:"1k - 2k SF",submarket:"",liquor:"",type:"Local"},
+  {id:"134289437038",name:"Sunny Singh",company:"Chaiwale & Co.",email:"shilp.chaiwale@gmail.com",concept:"Fast Casual",sf:"1k - 2k SF",submarket:"",liquor:"",type:"Local"},
+  {id:"122261446001",name:"Bob Wilson",company:"Woody's Hideaway",email:"bob@lw-brands.com",concept:"Bar/Nightclub",sf:"4k - 5k SF",submarket:"",liquor:"Type 47 Full Liquor",type:"Local"},
+  {id:"121160110889",name:"Sam Bagheri",company:"SNR Group",email:"sam@snr.group",concept:"Full Service",sf:"2K - 3K SF",submarket:"",liquor:"Type 47 Full Liquor",type:"Restaurant Buyer"},
+  {id:"121162437663",name:"Shelley Armistead",company:"Gjusta",email:"shelley@gjelina.com",concept:"Retail / Fast Casual / Full Service",sf:"",submarket:"",liquor:"",type:"Local"},
+  {id:"116141103934",name:"Franco Mestre",company:"Origen",email:"franco@profitbee.io",concept:"Full Service",sf:"",submarket:"",liquor:"Type 47 Full Liquor",type:"Local"},
+  {id:"114590645584",name:"Phil Spadaro",company:"Local Krave",email:"phil.victorymma@gmail.com",concept:"Retail",sf:"3k - 4k SF",submarket:"",liquor:"",type:"Local"},
+  {id:"111351862813",name:"Alex Melzer",company:"Early Bird Tacos",email:"alex@earlybirdtacos.com",concept:"Quick Service",sf:"2K - 3K SF",submarket:"",liquor:"Type 47 Full Liquor",type:"Local"},
+  {id:"166714101808",name:"Greg Nazloo",company:"",email:"gnazloo11@gmail.com",concept:"Fast Casual",sf:"1k - 2k SF",submarket:"Uptown",liquor:"",type:"Local"},
+  {id:"107879757978",name:"Paul White",company:"Catchers Fish",email:"catchersfishlv@gmail.com",concept:"Full Service",sf:"4k - 5k SF",submarket:"",liquor:"",type:"Regional"},
+  {id:"111606488174",name:"Sohaib Khan",company:"The Halal Guys",email:"khanthg1@gmail.com",concept:"Fast Casual",sf:"1k - 2k SF",submarket:"",liquor:"",type:"Franchisee"},
+  {id:"144904312343",name:"Husam Qanawati",company:"Olive Roots",email:"hussam.canawati@gmail.com",concept:"Fast Casual",sf:"",submarket:"",liquor:"",type:"Restaurant Buyer"},
+  {id:"138077357226",name:"Connie Diaz",company:"Kono's Northshore",email:"cdnurse2@gmail.com",concept:"Quick Service",sf:"1k - 2k SF",submarket:"",liquor:"",type:"Restaurant Buyer"},
+  {id:"138043157806",name:"Jacob Gedis",company:"Pappanini",email:"gedis.jacob@gmail.com",concept:"Quick Service",sf:"1k - 2k SF",submarket:"",liquor:"",type:"Restaurant Buyer"},
+  {id:"116201439034",name:"Chloe Foster",company:"",email:"chloemfos@gmail.com",concept:"Quick Service",sf:"1k - 2k SF",submarket:"",liquor:"Type 41 Beer & Wine",type:"Restaurant Buyer"},
+  {id:"157669447828",name:"Isabelle Lopez",company:"",email:"isabelleal0328@gmail.com",concept:"Fast Casual",sf:"1k - 2k SF",submarket:"",liquor:"Type 41 Beer & Wine",type:"Local"},
+  {id:"168677570597",name:"Halil Altun",company:"",email:"halilaltun81@icloud.com",concept:"Full Service",sf:"2K - 3K SF",submarket:"",liquor:"Type 47 / Beer & Wine",type:"Restaurant Buyer"},
+  {id:"176638181237",name:"Cameron Mattia",company:"",email:"cammym710@gmail.com",concept:"Full Service / Fast Casual",sf:"1k - 3k SF",submarket:"",liquor:"Type 41 / Type 47",type:""},
+  {id:"140337703051",name:"William Chang",company:"Dumpling by Aro",email:"will@dumplinbyaro.com",concept:"Quick Service",sf:"1k - 2k SF",submarket:"",liquor:"",type:"Restaurant Buyer"},
+  {id:"152475150460",name:"Johnny Seaton",company:"Yacht Club Empire",email:"yachtclubempire23@gmail.com",concept:"Bar/Nightclub / Full Service",sf:"",submarket:"",liquor:"Type 47 / Type 48",type:"Local"},
+  {id:"187193661600",name:"Dwayne Jones",company:"",email:"dwayne.jones2626@gmail.com",concept:"Bar/Nightclub / Full Service",sf:"1k - 2k SF",submarket:"",liquor:"",type:"Restaurant Buyer"},
+  {id:"112190336539",name:"Amy Bao",company:"Luscious Dumplings",email:"siyingbao12@gmail.com",concept:"Fast Casual",sf:"1k - 2k SF",submarket:"",liquor:"",type:"Local"},
+  {id:"143989726230",name:"Daniel Nohra",company:"",email:"danohra@hotmail.com",concept:"Fast Casual",sf:"1k - 2k SF",submarket:"",liquor:"",type:"Restaurant Buyer"},
+  {id:"110739894128",name:"Faris Saleh",company:"House of Mandi",email:"salehfaris285@gmail.com",concept:"Quick Service",sf:"1k - 2k SF",submarket:"",liquor:"",type:"Local"},
+  {id:"140013436759",name:"Jose Baldiviezo",company:"Tajibo Coffee",email:"jbaldiviezo@tajibocoffee.com",concept:"Fast Casual",sf:"1k - 2k SF",submarket:"",liquor:"",type:"Local"},
+  {id:"111065134515",name:"Sharian Lott",company:"Schmackary's Cookies",email:"broadwaycookiesocal@gmail.com",concept:"Quick Service",sf:"1k - 2k SF",submarket:"",liquor:"",type:"Franchisee"},
+  {id:"174442147993",name:"Nick Tsigaris",company:"",email:"nikotsigaris@gmail.com",concept:"Fast Casual",sf:"1k - 2k SF",submarket:"",liquor:"",type:"Local"},
+  {id:"146135118154",name:"Codey Scott",company:"Robbie's Fish and Chips",email:"codeyscott42@outlook.com",concept:"Fast Casual",sf:"1k - 2k SF",submarket:"",liquor:"",type:"Restaurant Buyer"},
+  {id:"157328755115",name:"Mike Anderson",company:"Love Song Coffee",email:"mike@lovesongcoffee.com",concept:"Quick Service",sf:"",submarket:"",liquor:"",type:"Local"},
+  {id:"127710319534",name:"Givino Rossini",company:"Kettle On Grand",email:"givino@kettleongrand.com",concept:"Quick Service",sf:"",submarket:"",liquor:"",type:"Local"},
+  {id:"132726111557",name:"Mike Amelsberg",company:"Pho Fifth Avenue",email:"mamelsberg@gmail.com",concept:"Fast Casual",sf:"1k - 2k SF",submarket:"",liquor:"",type:"Local"},
+];
+
+// ─── PLACEHOLDER PROPERTIES ──────────────────────────────────────────────────
+const PROPERTIES = [
+  {id:1,name:"2401 Kettner Blvd",address:"Little Italy, San Diego",sf:3200,sfMin:3200,sfMax:3200,rent:"$72/SF NNN",market:"Little Italy",liquor:true,patio:true,parking:true,own:true,concept:"Full Service"},
+  {id:2,name:"India Street End-Cap",address:"2210 India St, Little Italy",sf:2400,sfMin:2400,sfMax:2400,rent:"$78/SF NNN",market:"Little Italy",liquor:true,patio:true,parking:false,own:true,concept:"Bar/Nightclub"},
+  {id:3,name:"Gaslamp Row — Suite 101",address:"404 Market St, Gaslamp",sf:2600,sfMin:2600,sfMax:2600,rent:"$68/SF NNN",market:"Gaslamp Quarter",liquor:true,patio:true,parking:false,own:false,concept:"Full Service"},
+  {id:4,name:"La Jolla Village Plaza",address:"7777 Girard Ave, La Jolla",sf:1100,sfMin:1100,sfMax:1100,rent:"$58/SF NNN",market:"La Jolla",liquor:false,patio:true,parking:true,own:false,concept:"Cafe / Coffee"},
+  {id:5,name:"East Village Flagship",address:"800 Market St, East Village",sf:4200,sfMin:4200,sfMax:4200,rent:"$65/SF NNN",market:"East Village",liquor:true,patio:false,parking:true,own:false,concept:"Full Service"},
+  {id:6,name:"Uptown Pad — 5th Ave",address:"3675 5th Ave, Hillcrest/Uptown",sf:1600,sfMin:1600,sfMax:1600,rent:"$48/SF NNN",market:"Uptown",liquor:false,patio:true,parking:false,own:false,concept:"Fast Casual"},
+  {id:7,name:"Chula Vista Town Square",address:"299 3rd Ave, Chula Vista",sf:1500,sfMin:1500,sfMax:1500,rent:"$40/SF NNN",market:"Chula Vista",liquor:false,patio:false,parking:true,own:false,concept:"Quick Service"},
+];
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function parseSFRange(sfStr) {
+  if (!sfStr) return {min:0,max:999999};
+  const map = {"1k - 2k SF":{min:1000,max:2000},"2K - 3K SF":{min:2000,max:3000},"3k - 4k SF":{min:3000,max:4000},"4k - 5k SF":{min:4000,max:5000},"5k - 6k SF":{min:5000,max:6000},"7 - 10k SF":{min:7000,max:10000},"10k SF +":{min:10000,max:50000}};
+  let min = 999999, max = 0;
+  sfStr.split(";").forEach(s=>{
+    const r = map[s.trim()];
+    if(r){min=Math.min(min,r.min);max=Math.max(max,r.max);}
+  });
+  return min===999999?{min:0,max:999999}:{min,max};
+}
+
+function needsLiquor(t) {
+  return !!(t.liquor && t.liquor.trim());
+}
+
+function parseRent(r) { const m=r.match(/\$(\d+)/); return m?parseInt(m[1]):0; }
+
+function conceptMatch(tenantConcept, propConcept) {
+  if (!tenantConcept) return true;
+  const tc = tenantConcept.toLowerCase();
+  const pc = propConcept.toLowerCase();
+  if (tc.includes('full service') && pc.includes('full service')) return true;
+  if (tc.includes('fast casual') && pc.includes('fast casual')) return true;
+  if (tc.includes('quick service') && pc.includes('quick service')) return true;
+  if (tc.includes('bar') && pc.includes('bar')) return true;
+  if (tc.includes('brewery') && pc.includes('brewery')) return true;
+  return false;
+}
+
+function scoreMatch(tenant, prop) {
+  const sfRange = parseSFRange(tenant.sf);
+  const sfOk = prop.sf >= sfRange.min && prop.sf <= sfRange.max;
+  const sfClose = prop.sf >= sfRange.min*0.85 && prop.sf <= sfRange.max*1.15;
+  const noSf = !tenant.sf;
+  const liqNeeded = needsLiquor(tenant);
+  const liqOk = !liqNeeded || prop.liquor;
+  const hasSub = !!tenant.submarket;
+  const subOk = !hasSub || tenant.submarket.toLowerCase().includes(prop.market.toLowerCase()) || prop.market.toLowerCase().includes(tenant.submarket.toLowerCase());
+
+  let eliminated = false;
+  let criteria = [];
+
+  if (!noSf && !sfOk && !sfClose) { eliminated = true; }
+  criteria.push({label:'SF range', pass:noSf||sfOk, warn:sfClose&&!sfOk, hard:true, missing:noSf});
+
+  if (!subOk) { eliminated = true; }
+  criteria.push({label:'Submarket', pass:subOk, hard:true, missing:!hasSub});
+
+  if (!liqOk) { eliminated = true; }
+  criteria.push({label:'Liquor', pass:liqOk, hard:true});
+
+  let score = 0;
+  if (!eliminated) {
+    if (subOk && hasSub) score += 30; else if (!hasSub) score += 15;
+    if (noSf) score += 12;
+    else if (sfOk) score += 25;
+    else if (sfClose) score += 12;
+    if (conceptMatch(tenant.concept, prop.concept)) score += 15; else score += 5;
+    score += 15; // default stage pts
+    score += 8;  // default timeline pts
+    if (prop.own) score += 5;
+  }
+
+  return {score:eliminated?0:Math.min(score,100), eliminated, criteria};
+}
+
+function getColor(s) { return s>=75?'#4caf7d':s>=50?'#d4833a':'#e05252'; }
+function getWord(s,e) { if(e||s===0)return''; return s>=75?'Strong':s>=50?'Possible':'Weak'; }
+
+// ─── CONCEPT FILTER ───────────────────────────────────────────────────────────
+let allConcepts = [...new Set(RAW.flatMap(t=>t.concept.split('/').map(c=>c.trim())))].filter(Boolean).sort();
+let activeConcept = 'All';
+let activeFilter = 'all';
+let activeTenant = null;
+let channels = {email:true,sms:true};
+
+function buildConceptFilters() {
+  const el = document.getElementById('concept-filters');
+  const concepts = ['All',...allConcepts.filter(c=>RAW.some(t=>t.concept.includes(c)))];
+  el.innerHTML = [...new Set(concepts)].map(c=>`<span class="pill ${activeConcept===c?'active':''}" onclick="setConcept('${c}')">${c}</span>`).join('');
+}
+
+function setConcept(c) { activeConcept=c; buildConceptFilters(); renderTenantList(''); }
+
+// ─── TENANT LIST ──────────────────────────────────────────────────────────────
+const COLORS = ['av-gold','av-green','av-blue','av-amber','av-red','av-purple'];
+function avColor(id) { return COLORS[parseInt(id)%COLORS.length]; }
+function initials(name) { const p=name.trim().split(' '); return (p[0][0]+(p[1]?p[1][0]:'')).toUpperCase(); }
+
+function getFiltered(search='') {
+  return RAW.filter(t=>{
+    const matchSearch = !search || t.name.toLowerCase().includes(search.toLowerCase()) || (t.company||'').toLowerCase().includes(search.toLowerCase());
+    const matchConcept = activeConcept==='All' || t.concept.includes(activeConcept);
+    return matchSearch && matchConcept;
+  });
+}
+
+function renderTenantList(search='') {
+  const list = document.getElementById('tenant-list');
+  const filtered = getFiltered(search);
+  document.getElementById('stat-tenants').textContent = filtered.length;
+  list.innerHTML = filtered.map(t=>{
+    const matches = PROPERTIES.filter(p=>scoreMatch(t,p).score>=75).length;
+    const hasMissingData = !t.sf || !t.submarket;
+    return `<div class="tenant-item ${activeTenant&&activeTenant.id===t.id?'active':''}" onclick="selectTenant('${t.id}')">
+      <div class="tenant-avatar ${avColor(t.id)}">${initials(t.name)}</div>
+      <div class="tenant-info">
+        <div class="tenant-name">${hasMissingData?'<span class="gap-dot"></span>':''}<a href="https://app.hubspot.com/contacts/43543939/record/0-1/${t.id}" target="_blank" style="color:inherit;text-decoration:none;" onclick="event.stopPropagation()">${t.name}</a></div>
+        ${t.company?`<div class="tenant-company">${t.company}</div>`:''}
+        <div class="tenant-concept">${t.concept}</div>
+      </div>
+      <div>
+        <div class="tenant-match-count" style="color:${matches>0?'var(--gold)':'var(--muted2)'}">${matches}</div>
+        <div class="match-label">matches</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterTenants(val) { renderTenantList(val); }
+
+function selectTenant(id) {
+  activeTenant = RAW.find(t=>t.id===id);
+  activeFilter = 'all';
+  renderTenantList(document.querySelector('.search-input').value);
+  renderDetail();
+}
+
+function renderDetail() {
+  if (!activeTenant) return;
+  const t = activeTenant;
+  const sfRange = parseSFRange(t.sf);
+  const results = PROPERTIES.map(p=>({prop:p,...scoreMatch(t,p)})).sort((a,b)=>b.score-a.score);
+  const strong = results.filter(r=>r.score>=75).length;
+  document.getElementById('stat-matches').textContent = strong;
+
+  let filtered = results;
+  if (activeFilter==='strong') filtered = results.filter(r=>r.score>=75);
+  if (activeFilter==='possible') filtered = results.filter(r=>r.score>=50&&r.score<75);
+  if (activeFilter==='own') filtered = results.filter(r=>r.prop.own);
+
+  const missingFields = [];
+  if (!t.sf) missingFields.push('SF range');
+  if (!t.submarket) missingFields.push('submarket');
+  if (!t.liquor && t.concept.toLowerCase().includes('bar')) missingFields.push('liquor license type');
+
+  document.getElementById('right-panel').innerHTML = `
+    <div class="detail-header">
+      <div class="detail-name">${t.name}</div>
+      ${t.company?`<div class="detail-company">${t.company}</div>`:''}
+      <div class="detail-concept">${t.concept}</div>
+      <div class="req-row">
+        <div class="req-item"><div class="req-label">SF Range</div><div class="${t.sf?'req-value':'req-missing'}">${t.sf||'Not recorded'}</div></div>
+        <div class="req-item"><div class="req-label">Submarket</div><div class="${t.submarket?'req-value':'req-missing'}">${t.submarket||'Not recorded'}</div></div>
+        <div class="req-item"><div class="req-label">Liquor req.</div><div class="req-value">${t.liquor||'None / unknown'}</div></div>
+        <div class="req-item"><div class="req-label">Operator type</div><div class="req-value">${t.type||'Unknown'}</div></div>
+        <div class="req-item"><div class="req-label">Email</div><div class="req-value" style="font-size:11px;color:var(--muted)">${t.email||'Not on file'}</div></div>
+      </div>
+      ${missingFields.length?`<div class="gap-card"><strong>⚠ Data gaps — update needed</strong>Missing: ${missingFields.join(', ')}. Send this contact an update link to fill in their requirements.</div>`:''}
+    </div>
+    <div style="height:12px"></div>
+    <div class="section-bar">
+      <div class="section-bar-title">${results.filter(r=>r.score>0).length} properties scored · ${strong} strong matches</div>
+      <div class="filter-tabs">
+        <button class="filter-tab ${activeFilter==='all'?'active':''}" onclick="setFilter('all')">All</button>
+        <button class="filter-tab ${activeFilter==='strong'?'active':''}" onclick="setFilter('strong')">Strong</button>
+        <button class="filter-tab ${activeFilter==='possible'?'active':''}" onclick="setFilter('possible')">Possible</button>
+        <button class="filter-tab ${activeFilter==='own'?'active':''}" onclick="setFilter('own')">Your Listings</button>
+      </div>
+    </div>
+    <div class="properties">
+      ${filtered.map(r=>renderCard(r,t)).join('')}
+    </div>
+    <div style="height:24px"></div>
+  `;
+}
+
+function renderCard(r, t) {
+  const {prop,score,eliminated,criteria} = r;
+  const color = getColor(score);
+  const word = getWord(score,eliminated);
+  const circ = 2*Math.PI*19;
+  const dash = eliminated?0:(score/100)*circ;
+
+  if (eliminated) return `<div class="prop-card" style="opacity:0.4">
+    <div class="prop-card-inner">
+      <div class="score-col">
+        <div class="score-ring"><svg width="46" height="46" viewBox="0 0 46 46"><circle fill="none" stroke="var(--bg4)" stroke-width="3" cx="23" cy="23" r="19"/></svg><div class="score-num" style="color:var(--muted2);font-size:11px">—</div></div>
+        <div class="score-word" style="color:var(--muted2)">Elim.</div>
+      </div>
+      <div class="prop-body">
+        <div class="prop-top"><div><div class="prop-name">${prop.name}</div><div class="prop-address">${prop.address}</div></div>${prop.own?'<span class="own-badge">Your listing</span>':''}</div>
+        <div class="prop-criteria">${criteria.filter(c=>!c.pass&&!c.missing).map(c=>`<span class="crit crit-fail">✕ ${c.label}</span>`).join('')}</div>
+      </div>
+    </div>
+  </div>`;
+
+  return `<div class="prop-card ${prop.own?'own':''}">
+    <div class="prop-card-inner">
+      <div class="score-col">
+        <div class="score-ring">
+          <svg width="46" height="46" viewBox="0 0 46 46">
+            <circle fill="none" stroke="var(--bg4)" stroke-width="3" cx="23" cy="23" r="19"/>
+            <circle fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round" cx="23" cy="23" r="19" stroke-dasharray="${dash} ${circ}" transform="rotate(-90 23 23)"/>
+          </svg>
+          <div class="score-num" style="color:${color}">${Math.round(score)}</div>
+        </div>
+        <div class="score-word" style="color:${color}">${word}</div>
+      </div>
+      <div class="prop-body">
+        <div class="prop-top">
+          <div><div class="prop-name">${prop.name}</div><div class="prop-address">${prop.address}</div></div>
+          ${prop.own?'<span class="own-badge">Your listing</span>':''}
+        </div>
+        <div class="prop-specs">
+          <div class="spec"><div class="spec-label">SF</div><div class="spec-value">${prop.sf.toLocaleString()}</div></div>
+          <div class="spec"><div class="spec-label">Rent</div><div class="spec-value">${prop.rent}</div></div>
+          <div class="spec"><div class="spec-label">Market</div><div class="spec-value">${prop.market}</div></div>
+          <div class="spec"><div class="spec-label">Patio</div><div class="spec-value">${prop.patio?'Yes':'No'}</div></div>
+          <div class="spec"><div class="spec-label">Liquor</div><div class="spec-value">${prop.liquor?'Available':'N/A'}</div></div>
+        </div>
+        <div class="prop-criteria">
+          ${criteria.map(c=>`<span class="crit ${c.missing?'crit-warn':c.pass?'crit-pass':'crit-fail'}">${c.missing?'?':c.pass?'✓':'✕'} ${c.label}${c.missing?' (missing)':''}</span>`).join('')}
+        </div>
+      </div>
+      <div class="prop-actions-col">
+        <button class="prop-action send" onclick="openModal(${prop.id})">Send ↗</button>
+        <div class="prop-action-divider"></div>
+        <button class="prop-action pass" onclick="logPass('${prop.name}')">Pass</button>
+        <div class="prop-action-divider"></div>
+        <button class="prop-action" onclick="window.open('https://app.hubspot.com/contacts/43543939/record/0-1/${activeTenant?.id}','_blank')">CRM ↗</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function setFilter(f) { activeFilter=f; renderDetail(); }
+
+function runAll() {
+  let total=0;
+  RAW.forEach(t=>{ total+=PROPERTIES.filter(p=>scoreMatch(t,p).score>=75).length; });
+  document.getElementById('stat-matches').textContent=total;
+  showToast(`Matching complete — ${total} strong matches across ${RAW.length} contacts`);
+  if(activeTenant) renderDetail();
+}
+
+let sendPropId = null;
+function openModal(propId) {
+  if(!activeTenant) return;
+  sendPropId = propId;
+  const prop = PROPERTIES.find(p=>p.id===propId);
+  const t = activeTenant;
+  document.getElementById('modal-sub').textContent = `To: ${t.name}${t.company?' ('+t.company+')':''} · ${prop.name}`;
+  document.getElementById('modal-preview').textContent =
+    `Email: "Hi ${t.name.split(' ')[0]}, I have a space in ${prop.market} that looks like a strong fit — ${prop.sf.toLocaleString()} SF at ${prop.rent}. Worth a quick look?"\n\nSMS: "Hey ${t.name.split(' ')[0]}, it's Mike — found a spot in ${prop.market} that fits what you're looking for. Take a look: [survey link]. Interested or pass?"`;
+  channels={email:true,sms:true};
+  document.getElementById('ch-email').classList.add('on');
+  document.getElementById('ch-sms').classList.add('on');
+  document.getElementById('modal').classList.add('open');
+}
+function toggleCh(c) { channels[c]=!channels[c]; document.getElementById('ch-'+c).classList.toggle('on',channels[c]); }
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+function confirmSend() {
+  closeModal();
+  const ch=[channels.email&&'email',channels.sms&&'SMS'].filter(Boolean).join(' + ');
+  showToast(`Sent to ${activeTenant.name} via ${ch}`);
+}
+function logPass(name) { showToast(`Pass logged for ${name} — preference noted`); }
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+buildConceptFilters();
+renderTenantList();
+</script>
+</body>
+</html>
