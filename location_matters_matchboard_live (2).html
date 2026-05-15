@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Location Matters — Tenant Match Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Archivo:wght@400;500;600&family=Archivo+Narrow:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0e0f0c;--bg2:#161714;--bg3:#1e1f1c;--bg4:#252622;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#e8e6df;--muted:#7a7870;--muted2:#5a5850;
+  --gold:#c9a84c;--gold2:#e8c76a;
+  --green:#4caf7d;--green-bg:rgba(76,175,125,0.12);
+  --red:#e05252;--red-bg:rgba(224,82,82,0.1);
+  --amber:#d4833a;--amber-bg:rgba(212,131,58,0.12);
+  --blue:#5b9bd4;--blue-bg:rgba(91,155,212,0.1);
+  --purple:#9b7fd4;--purple-bg:rgba(155,127,212,0.1);
+  --serif:'Bebas Neue',sans-serif;--body:'Archivo',sans-serif;--narrow:'Archivo Narrow',sans-serif;
+}
+html{font-size:14px}
+body{background:var(--bg);color:var(--text);font-family:var(--body);min-height:100vh;overflow-x:hidden}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:50px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;background:var(--bg)}
+.brand-name{font-family:var(--serif);font-size:20px;letter-spacing:.04em;color:var(--gold)}
+.brand-sub{font-family:var(--narrow);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-left:10px}
+.topbar-stats{display:flex;align-items:center;gap:16px}
+.stat{text-align:right}
+.stat-val{font-family:var(--serif);font-size:18px;color:var(--gold);line-height:1}
+.stat-label{font-family:var(--narrow);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.run-btn{background:var(--gold);color:#0e0f0c;border:none;padding:6px 14px;font-family:var(--narrow);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;border-radius:2px}
+.run-btn:hover{background:var(--gold2)}
+.main{display:grid;grid-template-columns:280px 1fr;height:calc(100vh - 50px)}
+.left{border-right:1px solid var(--border);overflow-y:auto;background:var(--bg2)}
+.panel-header{padding:12px 14px 8px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg2);z-index:10}
+.panel-title{font-family:var(--narrow);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.search-input{width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:6px 9px;font-family:var(--narrow);font-size:12px;border-radius:2px;outline:none}
+.search-input:focus{border-color:var(--gold)}
+.search-input::placeholder{color:var(--muted2)}
+.filter-pills{display:flex;gap:3px;flex-wrap:wrap;padding:6px 14px;border-bottom:1px solid var(--border)}
+.pill{font-family:var(--narrow);font-size:9px;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:10px;border:1px solid var(--border2);color:var(--muted);cursor:pointer}
+.pill.active{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,.1)}
+.tier-header{padding:5px 14px;font-family:var(--narrow);font-size:9px;letter-spacing:.12em;text-transform:uppercase;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px}
+.tier-gold{color:var(--gold)}
+.tier-silver{color:var(--muted)}
+.tenant-item{padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s;display:flex;align-items:flex-start;gap:9px}
+.tenant-item:hover{background:var(--bg3)}
+.tenant-item.active{background:var(--bg4);border-left:2px solid var(--gold)}
+.av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:11px;flex-shrink:0;margin-top:1px}
+.av0{background:rgba(201,168,76,.15);color:var(--gold)}
+.av1{background:rgba(76,175,125,.15);color:var(--green)}
+.av2{background:rgba(91,155,212,.15);color:var(--blue)}
+.av3{background:rgba(212,131,58,.15);color:var(--amber)}
+.av4{background:rgba(224,82,82,.15);color:var(--red)}
+.av5{background:rgba(155,127,212,.15);color:var(--purple)}
+.t-info{flex:1;min-width:0}
+.t-name{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:1px}
+.t-company{font-family:var(--narrow);font-size:10px;color:var(--gold);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.t-meta{font-family:var(--narrow);font-size:10px;color:var(--muted)}
+.t-count{font-family:var(--serif);font-size:17px;line-height:1;flex-shrink:0}
+.t-clabel{font-family:var(--narrow);font-size:8px;color:var(--muted2);text-transform:uppercase;text-align:right}
+.right{overflow-y:auto}
+.empty{text-align:center;padding:60px 40px;color:var(--muted)}
+.empty-title{font-family:var(--serif);font-size:26px;color:var(--muted2);margin-bottom:8px}
+.detail-header{padding:18px 22px 14px;border-bottom:1px solid var(--border)}
+.d-name{font-family:var(--serif);font-size:30px;letter-spacing:.02em;line-height:1;margin-bottom:2px}
+.d-company{font-family:var(--narrow);font-size:12px;color:var(--gold);letter-spacing:.08em;margin-bottom:2px}
+.d-concept{font-family:var(--narrow);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.req-row{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:10px}
+.req-label{font-family:var(--narrow);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:2px}
+.req-value{font-size:12px;font-weight:500}
+.req-missing{font-size:11px;color:var(--amber);font-family:var(--narrow);font-style:italic}
+.section-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 22px 8px;border-bottom:1px solid var(--border);gap:8px;flex-wrap:wrap}
+.section-bar-title{font-family:var(--narrow);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.ftabs{display:flex;gap:2px;flex-wrap:wrap}
+.ftab{padding:3px 8px;font-family:var(--narrow);font-size:10px;letter-spacing:.07em;text-transform:uppercase;cursor:pointer;border-radius:2px;border:1px solid transparent;color:var(--muted);background:none}
+.ftab.active{border-color:var(--border2);color:var(--text);background:var(--bg3)}
+.props{padding:14px 22px;display:flex;flex-direction:column;gap:8px}
+.pcard{background:var(--bg2);border:1px solid var(--border);border-radius:3px;overflow:hidden;animation:si .2s ease both}
+@keyframes si{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.pcard.new-const{border-left:3px solid var(--blue)}
+.pcard.biz-sale{border-left:3px solid var(--purple)}
+.pcard-inner{display:flex;align-items:stretch}
+.score-col{width:68px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px;border-right:1px solid var(--border);flex-shrink:0;gap:2px}
+.score-ring{position:relative;width:44px;height:44px}
+.score-ring svg{transform:rotate(-90deg)}
+.score-num{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:var(--serif);font-size:14px;line-height:1}
+.score-word{font-family:var(--narrow);font-size:8px;letter-spacing:.06em;text-transform:uppercase;text-align:center}
+.pbody{flex:1;padding:10px 14px;min-width:0}
+.ptop{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:5px}
+.p-name{font-size:12px;font-weight:600;line-height:1.3}
+.p-address{font-family:var(--narrow);font-size:10px;color:var(--muted);margin-top:1px}
+.pbadge{font-family:var(--narrow);font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:2px 6px;border-radius:2px;white-space:nowrap;flex-shrink:0}
+.badge-new{background:var(--blue-bg);color:var(--blue)}
+.badge-biz{background:var(--purple-bg);color:var(--purple)}
+.pspecs{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+.spec-label{font-family:var(--narrow);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted2)}
+.spec-value{font-size:11px;font-weight:500}
+.pcriteria{display:flex;gap:4px;flex-wrap:wrap}
+.crit{font-family:var(--narrow);font-size:9px;padding:2px 5px;border-radius:2px}
+.crit-pass{background:var(--green-bg);color:var(--green)}
+.crit-fail{background:var(--red-bg);color:var(--red)}
+.crit-warn{background:var(--amber-bg);color:var(--amber)}
+.crit-info{background:var(--blue-bg);color:var(--blue)}
+.pnotes{font-family:var(--narrow);font-size:10px;color:var(--muted);margin-top:4px;line-height:1.4;font-style:italic}
+.pactions{width:90px;border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.paction{flex:1;display:flex;align-items:center;justify-content:center;font-family:var(--narrow);font-size:10px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;background:none;border:none;color:var(--muted);transition:all .1s}
+.paction:hover{background:var(--bg3)}
+.paction.send:hover{color:var(--green)}
+.paction.pass:hover{color:var(--red)}
+.pdiv{height:1px;background:var(--border);flex-shrink:0}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:4px;padding:22px;max-width:420px;width:90%}
+.modal-title{font-family:var(--serif);font-size:22px;margin-bottom:4px}
+.modal-sub{font-family:var(--narrow);font-size:11px;color:var(--muted);margin-bottom:14px}
+.modal-preview{background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:12px;font-size:11px;line-height:1.7;color:var(--text);margin-bottom:12px;font-family:var(--narrow);white-space:pre-wrap}
+.modal-channels{display:flex;gap:7px;margin-bottom:16px}
+.ch-toggle{flex:1;padding:7px;border:1px solid var(--border2);border-radius:2px;background:none;color:var(--muted);font-family:var(--narrow);font-size:11px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
+.ch-toggle.on{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,.08)}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end}
+.modal-cancel{background:none;border:1px solid var(--border2);color:var(--muted);padding:6px 14px;font-family:var(--narrow);font-size:11px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;border-radius:2px}
+.modal-send{background:var(--gold);color:#0e0f0c;border:none;padding:6px 16px;font-family:var(--narrow);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;border-radius:2px}
+.toast{position:fixed;bottom:18px;right:18px;background:var(--bg3);border:1px solid var(--green);color:var(--green);padding:8px 14px;font-family:var(--narrow);font-size:11px;border-radius:3px;z-index:300;opacity:0;transform:translateY(5px);transition:all .2s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--bg4)}
+.prop-item{padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s;display:flex;align-items:flex-start;gap:9px}
+.prop-item:hover{background:var(--bg3)}
+.prop-item.active{background:var(--bg4);border-left:2px solid var(--gold)}
+.prop-icon{width:28px;height:28px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:var(--narrow);font-size:8px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;flex-shrink:0;margin-top:1px}
+.pi-lease{background:var(--green-bg);color:var(--green)}
+.pi-new{background:var(--blue-bg);color:var(--blue)}
+.pi-biz{background:var(--purple-bg);color:var(--purple)}
+.tenant-match-card{background:var(--bg2);border:1px solid var(--border);border-radius:3px;overflow:hidden;animation:si .2s ease both;display:flex;align-items:stretch}
+.tmc-score{width:68px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px;border-right:1px solid var(--border);flex-shrink:0;gap:2px}
+.tmc-body{flex:1;padding:10px 14px;min-width:0}
+.tmc-name{font-size:13px;font-weight:600;margin-bottom:2px}
+.tmc-company{font-family:var(--narrow);font-size:10px;color:var(--gold);margin-bottom:4px}
+.tmc-specs{display:flex;gap:12px;flex-wrap:wrap}
+.tmc-actions{width:90px;border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+</style>
+</head>
+<body>
+<script>
+const CONTACTS=[{"id": "169432856597", "name": "Brian Cohen", "company": "Boss Management Group", "concept": "Bar/Nightclub", "sf": "10k SF +;7 - 10k SF;5k - 6k SF;4k - 5k SF;3k - 4k SF;2K - 3K SF", "submarket": "Downtown", "county": "San Diego County", "liquor": "Type 47 Full Liquor;Type 48 Full Liquor", "type": "Regional", "tier": "gold"}, {"id": "166714101808", "name": "Greg Nazloo", "company": "", "concept": "Fast Casual", "sf": "1k - 2k SF", "submarket": "Uptown", "county": "San Diego County", "liquor": "", "type": "Local", "tier": "gold"}, {"id": "140337699989", "name": "Musty Kamci", "company": "", "concept": "Full Service", "sf": "2K - 3K SF", "submarket": "", "county": "Los Angeles County;Orange County;San Diego County", "liquor": "", "type": "Local", "tier": "gold"}, {"id": "140323462259", "name": "Lupe Huerta", "company": "", "concept": "Quick Service", "sf": "2K - 3K SF;1k - 2k SF", "submarket": "", "county": "San Diego County;Riverside / San Bernardino;Los Angeles County;Orange County", "liquor": "", "type": "Regional", "tier": "gold"}, {"id": "91937325582", "name": "Mike Trang", "company": "Better Buzz Coffee", "concept": "Quick Service", "sf": "1k - 2k SF;2K - 3K SF", "submarket": "", "county": "San Diego County;Orange County;Los Angeles County;Riverside / San Bernardino", "liquor": "", "type": "Regional", "tier": "gold"}, {"id": "71239070328", "name": "John Varvatos", "company": "Villa One Tequila Gardens", "concept": "", "sf": "5k - 6k SF;7 - 10k SF", "submarket": "", "county": "San Diego County;Orange County;Los Angeles County", "liquor": "Type 47 Full Liquor", "type": "Local", "tier": "gold"}, {"id": "30970140540", "name": "Pam Schwartz", "company": "", "concept": "Full Service", "sf": "2K - 3K SF;1k - 2k SF", "submarket": "Coastal;North County", "county": "San Diego County", "liquor": "Type 47 Full Liquor", "type": "Restaurant Buyer", "tier": "gold"}, {"id": "23822983518", "name": "Audrey Liu", "company": "u Feng Yuan Dumpling Cafe", "concept": "Full Service", "sf": "2K - 3K SF;1k - 2k SF", "submarket": "Uptown", "county": "San Diego County", "liquor": "Type 41 Beer & Wine;Type 47 Full Liquor", "type": "Local", "tier": "gold"}, {"id": "55451", "name": "Ernesto Belmonte", "company": "", "concept": "Full Service", "sf": "1k - 2k SF;2K - 3K SF", "submarket": "", "county": "Orange County", "liquor": "Type 41 Beer & Wine", "type": "Local;Franchisee", "tier": "gold"}, {"id": "50351", "name": "Bashar Najeeb", "company": "Luigi's New York Giant Pizza", "concept": "Quick Service;Fast Casual", "sf": "1k - 2k SF", "submarket": "Uptown;South County;Downtown", "county": "San Diego County", "liquor": "", "type": "Local", "tier": "gold"}, {"id": "42901", "name": "Manish Sharma", "company": "", "concept": "Fast Casual", "sf": "1k - 2k SF", "submarket": "", "county": "San Diego County;Riverside / San Bernardino", "liquor": "", "type": "Franchisee", "tier": "gold"}, {"id": "41317", "name": "Mohammad Faizis", "company": "", "concept": "", "sf": "2K - 3K SF", "submarket": "Mid-Cities Urban;Inland", "county": "San Diego County", "liquor": "Type 47 Full Liquor", "type": "", "tier": "gold"}, {"id": "40265", "name": "Gyro Kings", "company": "", "concept": "", "sf": "1k - 2k SF", "submarket": "North County;Inland", "county": "San Diego County", "liquor": "", "type": "", "tier": "gold"}, {"id": "41757", "name": "Sam Kidrons", "company": "", "concept": "", "sf": "1k - 2k SF", "submarket": "Mid-Cities Urban;Inland", "county": "San Diego County", "liquor": "", "type": "", "tier": "gold"}, {"id": "40008", "name": "Kevin Michaels", "company": "", "concept": "", "sf": "1k - 2k SF", "submarket": "Mid-Cities Urban", "county": "San Diego County", "liquor": "", "type": "", "tier": "gold"}, {"id": "41803", "name": "Kayum Alan Popal", "company": "", "concept": "", "sf": "5k - 6k SF", "submarket": "North County;Downtown", "county": "San Diego County", "liquor": "", "type": "", "tier": "gold"}, {"id": "40254", "name": "Sean Brennan", "company": "", "concept": "", "sf": "1k - 2k SF", "submarket": "Downtown", "county": "San Diego County", "liquor": "Type 41 Beer & Wine", "type": "", "tier": "gold"}, {"id": "41151", "name": "Steve Pernicano", "company": "", "concept": "", "sf": "4k - 5k SF", "submarket": "", "county": "Orange County", "liquor": "Type 47 Full Liquor", "type": "", "tier": "gold"}, {"id": "7289", "name": "Billy Ramirez", "company": "Pacific Beach Fish Shop", "concept": "Fast Casual", "sf": "2K - 3K SF;3k - 4k SF", "submarket": "Coastal;North County;Inland", "county": "San Diego County;Orange County;Los Angeles County", "liquor": "Type 41 Beer & Wine;Type 47 Full Liquor", "type": "Local;Regional", "tier": "gold"}, {"id": "26151", "name": "Jeffrey Manno", "company": "New School Restaurant Consulting", "concept": "", "sf": "3k - 4k SF", "submarket": "", "county": "Los Angeles County", "liquor": "Type 47 Full Liquor", "type": "Restaurant Buyer", "tier": "gold"}, {"id": "14400", "name": "Ali Rabbani", "company": "", "concept": "", "sf": "3k - 4k SF", "submarket": "Uptown;Inland", "county": "Orange County", "liquor": "Type 47 Full Liquor", "type": "Local;Regional", "tier": "gold"}, {"id": "14190", "name": "Scott Bascon", "company": "Hole Mole", "concept": "", "sf": "2K - 3K SF", "submarket": "", "county": "Orange County", "liquor": "", "type": "Regional", "tier": "gold"}, {"id": "15796", "name": "Nick Weber", "company": "", "concept": "", "sf": "1k - 2k SF", "submarket": "", "county": "Orange County", "liquor": "", "type": "Restaurant Buyer", "tier": "gold"}, {"id": "13069", "name": "Steve Kalatschan", "company": "", "concept": "Bar/Nightclub", "sf": "2K - 3K SF", "submarket": "", "county": "Orange County", "liquor": "", "type": "Local", "tier": "gold"}, {"id": "13260", "name": "Ernest Scalzi", "company": "", "concept": "Full Service", "sf": "3k - 4k SF", "submarket": "", "county": "Los Angeles County", "liquor": "Type 47 Full Liquor", "type": "Restaurant Buyer", "tier": "gold"}, {"id": "13258", "name": "Joe Orlandi", "company": "", "concept": "", "sf": "2K - 3K SF", "submarket": "", "county": "Los Angeles County", "liquor": "", "type": "Restaurant Buyer", "tier": "gold"}, {"id": "8933", "name": "Anthony Ruffin", "company": "Bamboo's Jamaican Restaurant", "concept": "Full Service", "sf": "5k - 6k SF", "submarket": "", "county": "Los Angeles County", "liquor": "Type 47 Full Liquor", "type": "Local", "tier": "gold"}, {"id": "215763185825", "name": "Kevin Bang", "company": "Bonchon", "concept": "Fast Casual", "sf": "2K - 3K SF", "submarket": "", "county": "Los Angeles County", "liquor": "", "type": "Local;Franchisee", "tier": "gold"}, {"id": "7000", "name": "Leonardo Gomez", "company": "Madre Tierra", "concept": "Full Service", "sf": "3k - 4k SF", "submarket": "North County", "county": "Orange County", "liquor": "Type 47 Full Liquor", "type": "Local", "tier": "gold"}, {"id": "7895", "name": "Justin Burlingame", "company": "Red Oven Artisanal Pizza", "concept": "", "sf": "1k - 2k SF", "submarket": "North County;Downtown;Coastal", "county": "Orange County", "liquor": "Type 41 Beer & Wine", "type": "Local", "tier": "gold"}, {"id": "8147", "name": "Rico Ocir", "company": "Soho Taco", "concept": "Fast Casual", "sf": "1k - 2k SF", "submarket": "", "county": "Orange County", "liquor": "", "type": "Local", "tier": "gold"}, {"id": "9655", "name": "Donna Rubalcaba", "company": "", "concept": "Bar/Nightclub", "sf": "2K - 3K SF", "submarket": "", "county": "Orange County", "liquor": "Type 48 Full Liquor", "type": "Restaurant Buyer", "tier": "gold"}, {"id": "6788", "name": "Gabriel Franco", "company": "Flamingos", "concept": "Full Service", "sf": "3k - 4k SF;4k - 5k SF;5k - 6k SF", "submarket": "", "county": "Orange County", "liquor": "", "type": "Restaurant Buyer", "tier": "gold"}, {"id": "24201", "name": "Luis Juarez", "company": "Senor Woofle", "concept": "", "sf": "1k - 2k SF", "submarket": "Mid-Cities Urban", "county": "San Diego County", "liquor": "", "type": "", "tier": "gold"}, {"id": "23101", "name": "Nami Faramarazi", "company": "", "concept": "", "sf": "1k - 2k SF", "submarket": "North County", "county": "San Diego County", "liquor": "", "type": "", "tier": "gold"}, {"id": "21855", "name": "Vaahik Vartaniaz", "company": "Cafe Vahik", "concept": "", "sf": "2K - 3K SF", "submarket": "Coastal", "county": "San Diego County", "liquor": "", "type": "", "tier": "gold"}, {"id": "24402", "name": "Daniel Margles", "company": "", "concept": "", "sf": "1k - 2k SF", "submarket": "North County;Coastal", "county": "San Diego County", "liquor": "Type 41 Beer & Wine", "type": "", "tier": "gold"}, {"id": "19251", "name": "Barry Rosenblatt", "company": "Shared Kitchen Rentals", "concept": "", "sf": "2K - 3K SF", "submarket": "South County", "county": "San Diego County", "liquor": "", "type": "Local", "tier": "gold"}, {"id": "16096", "name": "Will Chen", "company": "", "concept": "Fast Casual", "sf": "1k - 2k SF", "submarket": "Mid-Cities Urban;Coastal", "county": "San Diego County", "liquor": "Type 41 Beer & Wine", "type": "Local", "tier": "gold"}, {"id": "17303", "name": "Shawn Kattoula", "company": "", "concept": "Fast Casual", "sf": "3k - 4k SF", "submarket": "Uptown", "county": "San Diego County", "liquor": "", "type": "Local", "tier": "gold"}, {"id": "15596", "name": "Mia Davis", "company": "", "concept": "Full Service", "sf": "4k - 5k SF", "submarket": "North County", "county": "San Diego County", "liquor": "", "type": "Local", "tier": "gold"}, {"id": "37551", "name": "Chelsea Coleman", "company": "", "concept": "Full Service", "sf": "2K - 3K SF", "submarket": "Mid-Cities Urban", "county": "San Diego County", "liquor": "Type 47 Full Liquor", "type": "Local", "tier": "gold"}, {"id": "12434", "name": "Ramon Guerrero", "company": "", "concept": "Full Service", "sf": "5k - 6k SF", "submarket": "Downtown", "county": "San Diego County", "liquor": "Type 47 Full Liquor", "type": "", "tier": "gold"}, {"id": "9612", "name": "Chad Furlong", "company": "", "concept": "Quick Service", "sf": "1k - 2k SF", "submarket": "Inland", "county": "San Diego County", "liquor": "", "type": "Local", "tier": "gold"}, {"id": "10057", "name": "Drew Hoffos", "company": "Nutmeg Restaurant", "concept": "Fast Casual", "sf": "2K - 3K SF", "submarket": "North County;Coastal", "county": "San Diego County", "liquor": "", "type": "Local", "tier": "gold"}, {"id": "8542", "name": "Ali Hachem", "company": "Cheat Treats Cafe", "concept": "", "sf": "1k - 2k SF", "submarket": "North County;Downtown", "county": "San Diego County", "liquor": "", "type": "Local", "tier": "gold"}, {"id": "10203", "name": "Joseph Ingram", "company": "The Cheesesteak Grill", "concept": "Fast Casual", "sf": "1k - 2k SF", "submarket": "Downtown", "county": "San Diego County", "liquor": "", "type": "Local", "tier": "gold"}, {"id": "7549", "name": "Jose Mendoza", "company": "", "concept": "", "sf": "1k - 2k SF", "submarket": "Downtown", "county": "San Diego County", "liquor": "Type 47 Full Liquor", "type": "Restaurant Buyer;Local", "tier": "gold"}, {"id": "9808", "name": "Vincenzo Di Rosa", "company": "", "concept": "", "sf": "1k - 2k SF", "submarket": "North County;Downtown;Mid-Cities Urban;Coastal", "county": "San Diego County", "liquor": "Type 41 Beer & Wine", "type": "Restaurant Buyer;Local", "tier": "gold"}, {"id": "8297", "name": "Jay Sobh", "company": "Tabu Shabu", "concept": "Full Service", "sf": "5k - 6k SF", "submarket": "North County", "county": "San Diego County", "liquor": "Type 47 Full Liquor", "type": "Local", "tier": "gold"}, {"id": "9517", "name": "Marwah Kazem", "company": "Al Khatoon Sweets", "concept": "Fast Casual", "sf": "1k - 2k SF", "submarket": "Inland", "county": "San Diego County", "liquor": "", "type": "Restaurant Buyer", "tier": "gold"}, {"id": "8245", "name": "Gary Yip", "company": "Boa - Hoboken NJ", "concept": "Bar/Nightclub", "sf": "7 - 10k SF", "submarket": "Downtown", "county": "San Diego County", "liquor": "Type 48 Full Liquor", "type": "Restaurant Buyer", "tier": "gold"}, {"id": "10102", "name": "Adrian Villanueva", "company": "Litikers Mexican", "concept": "Full Service", "sf": "1k - 2k SF", "submarket": "Downtown;Mid-Cities Urban;Coastal", "county": "San Diego County", "liquor": "", "type": "Restaurant Buyer", "tier": "gold"}, {"id": "8976", "name": "Gaurav Rathee", "company": "", "concept": "", "sf": "2K - 3K SF", "submarket": "North County", "county": "San Diego County", "liquor": "Type 41 Beer & Wine", "type": "Restaurant Buyer", "tier": "gold"}, {"id": "8321", "name": "Sonny Qattan", "company": "Cucina Italiana", "concept": "", "sf": "1k - 2k SF", "submarket": "North County;Coastal", "county": "San Diego County", "liquor": "", "type": "Restaurant Buyer", "tier": "gold"}, {"id": "9410", "name": "Katie Collier", "company": "Katies Pizza Pasta", "concept": "Full Service", "sf": "4k - 5k SF", "submarket": "North County", "county": "San Diego County", "liquor": "Type 47 Full Liquor", "type": "Local", "tier": "gold"}, {"id": "6995", "name": "Matt Goodwin", "company": "The Goodwin Group", "concept": "Bar/Nightclub", "sf": "3k - 4k SF", "submarket": "Downtown", "county": "San Diego County", "liquor": "Type 48 Full Liquor", "type": "Local", "tier": "gold"}, {"id": "9461", "name": "Kevin Attiq", "company": "", "concept": "Fast Casual", "sf": "1k - 2k SF", "submarket": "Downtown;Mid-Cities Urban;Coastal", "county": "San Diego County", "liquor": "", "type": "Restaurant Buyer", "tier": "gold"}, {"id": "7341", "name": "Cesar Vallin", "company": "Cloak and Petal", "concept": "Full Service", "sf": "3k - 4k SF", "submarket": "North County", "county": "San Diego County", "liquor": "Type 47 Full Liquor", "type": "Local", "tier": "gold"}, {"id": "7188", "name": "Jeffrey Wang", "company": "Soloman Bagels & Donuts", "concept": "Quick Service", "sf": "3k - 4k SF", "submarket": "Mid-Cities Urban", "county": "San Diego County", "liquor": "", "type": "Local", "tier": "gold"}, {"id": "8432", "name": "Khwanta Osanai", "company": "Soi 30th", "concept": "Fast Casual", "sf": "1k - 2k SF", "submarket": "Mid-Cities Urban", "county": "San Diego County", "liquor": "", "type": "Local", "tier": "gold"}, {"id": "9071", "name": "Greg Zennedjian", "company": "The Derby Room", "concept": "", "sf": "4k - 5k SF", "submarket": "North County;Mid-Cities Urban;Inland", "county": "San Diego County", "liquor": "", "type": "Local", "tier": "gold"}, {"id": "8580", "name": "Lam Nguyen", "company": "Crab Town", "concept": "Full Service", "sf": "2K - 3K SF", "submarket": "North County;Mid-Cities Urban;South County;Coastal", "county": "San Diego County", "liquor": "", "type": "Local", "tier": "gold"}, {"id": "9553", "name": "John Kokovitch", "company": "Lima Seafood & Ceviche", "concept": "", "sf": "2K - 3K SF", "submarket": "North County", "county": "San Diego County", "liquor": "", "type": "Restaurant Buyer", "tier": "gold"}, {"id": "7276", "name": "Frank Dhaliwal", "company": "", "concept": "Fine Dining", "sf": "4k - 5k SF", "submarket": "Downtown", "county": "San Diego County", "liquor": "Type 47 Full Liquor", "type": "Restaurant Buyer", "tier": "gold"}, {"id": "7143", "name": "Charlie Tran", "company": "Pho King", "concept": "Fast Casual", "sf": "2K - 3K SF", "submarket": "Mid-Cities Urban", "county": "San Diego County", "liquor": "", "type": "Local", "tier": "gold"}, {"id": "6990", "name": "Abe Artenstein", "company": "Java Earth Cafe", "concept": "", "sf": "1k - 2k SF", "submarket": "Coastal", "county": "San Diego County", "liquor": "Type 47 Full Liquor", "type": "Local", "tier": "gold"}, {"id": "8669", "name": "Russell Rummer", "company": "", "concept": "Fast Casual;Full Service", "sf": "1k - 2k SF", "submarket": "Downtown;Mid-Cities Urban", "county": "San Diego County", "liquor": "", "type": "Restaurant Buyer", "tier": "gold"}, {"id": "7333", "name": "John Yap", "company": "Krispy Krunchy Chicken", "concept": "Quick Service", "sf": "1k - 2k SF", "submarket": "North County;Mid-Cities Urban;Inland", "county": "San Diego County", "liquor": "", "type": "Local;Franchisee", "tier": "gold"}, {"id": "9257", "name": "Ramazan Taylan", "company": "Fig & Lily Garden", "concept": "Full Service", "sf": "3k - 4k SF", "submarket": "Coastal", "county": "San Diego County", "liquor": "", "type": "Local", "tier": "gold"}, {"id": "9068", "name": "Michele Bevilacqua", "company": "Dispensa", "concept": "Full Service", "sf": "1k - 2k SF", "submarket": "Coastal", "county": "San Diego County", "liquor": "Type 41 Beer & Wine", "type": "Local", "tier": "gold"}, {"id": "7774", "name": "Matthew Antonovich", "company": "Culinary Concepts", "concept": "", "sf": "4k - 5k SF", "submarket": "Coastal", "county": "San Diego County", "liquor": "Type 47 Full Liquor", "type": "Restaurant Buyer", "tier": "gold"}, {"id": "7826", "name": "Danny Dicarlo", "company": "", "concept": "", "sf": "4k - 5k SF", "submarket": "North County", "county": "San Diego County", "liquor": "Type 47 Full Liquor", "type": "Restaurant Buyer", "tier": "gold"}, {"id": "6682", "name": "Max Sansa", "company": "", "concept": "Full Service", "sf": "2K - 3K SF", "submarket": "Downtown;Mid-Cities Urban", "county": "San Diego County", "liquor": "", "type": "Restaurant Buyer", "tier": "gold"}, {"id": "7133", "name": "Joel Martinez", "company": "Shepherd's Coffee Co.", "concept": "Fast Casual", "sf": "1k - 2k SF", "submarket": "North County;Downtown;Mid-Cities Urban;South County", "county": "San Diego County", "liquor": "", "type": "Local", "tier": "gold"}, {"id": "8418", "name": "Brisa Johnson", "company": "", "concept": "Bar/Nightclub", "sf": "4k - 5k SF", "submarket": "Downtown", "county": "San Diego County", "liquor": "Type 47 Full Liquor", "type": "Restaurant Buyer", "tier": "gold"}, {"id": "8611", "name": "Anthony Botta", "company": "Botta Ventures", "concept": "", "sf": "1k - 2k SF", "submarket": "Coastal", "county": "San Diego County", "liquor": "Type 47 Full Liquor", "type": "Restaurant Buyer", "tier": "gold"}, {"id": "7129", "name": "Craig Penne", "company": "", "concept": "", "sf": "2K - 3K SF", "submarket": "Coastal", "county": "San Diego County", "liquor": "Type 41 Beer & Wine", "type": "Restaurant Buyer", "tier": "gold"}, {"id": "8015", "name": "Frank Dalton", "company": "", "concept": "", "sf": "1k - 2k SF", "submarket": "Coastal", "county": "San Diego County", "liquor": "Type 41 Beer & Wine", "type": "Restaurant Buyer", "tier": "gold"}, {"id": "6878", "name": "Tony Roxstrom", "company": "Pedro's Tacos", "concept": "Quick Service", "sf": "1k - 2k SF", "submarket": "North County;Coastal", "county": "San Diego County", "liquor": "", "type": "Franchisee", "tier": "gold"}, {"id": "8857", "name": "Susan Ma", "company": "Crazy Crab Seafood", "concept": "Full Service", "sf": "4k - 5k SF", "submarket": "Mid-Cities Urban;Coastal", "county": "San Diego County", "liquor": "Type 41 Beer & Wine", "type": "Local", "tier": "gold"}, {"id": "7322", "name": "Michael Chang", "company": "Mo's Egg House", "concept": "Full Service", "sf": "4k - 5k SF", "submarket": "North County", "county": "San Diego County", "liquor": "", "type": "Local", "tier": "gold"}, {"id": "6726", "name": "Bruce Glassman", "company": "", "concept": "Brewery", "sf": "3k - 4k SF", "submarket": "Downtown", "county": "San Diego County", "liquor": "", "type": "Restaurant Buyer", "tier": "gold"}, {"id": "8856", "name": "Marko Pavlinovic", "company": "", "concept": "", "sf": "2K - 3K SF", "submarket": "Coastal", "county": "San Diego County", "liquor": "", "type": "Restaurant Buyer", "tier": "gold"}, {"id": "5949", "name": "Jimmy Jang", "company": "Seasurf Fish Co.", "concept": "Fast Casual", "sf": "1k - 2k SF", "submarket": "North County;Mid-Cities Urban;Inland", "county": "San Diego County", "liquor": "", "type": "Local", "tier": "gold"}, {"id": "8807", "name": "Ed Kim", "company": "The Tin Fish", "concept": "Full Service", "sf": "3k - 4k SF", "submarket": "Downtown;Mid-Cities Urban;South County", "county": "San Diego County", "liquor": "", "type": "Local;Franchisee", "tier": "gold"}, {"id": "8210", "name": "Edgar Gonzalez", "company": "Taco Lounge", "concept": "Fine Dining", "sf": "1k - 2k SF", "submarket": "North County", "county": "San Diego County", "liquor": "", "type": "Local", "tier": "gold"}, {"id": "8157", "name": "Chris Revell", "company": "Kung Fu Tea", "concept": "Fast Casual", "sf": "1k - 2k SF", "submarket": "North County", "county": "San Diego County", "liquor": "", "type": "Restaurant Buyer;Franchisee;National", "tier": "gold"}, {"id": "7815", "name": "Steve Mason", "company": "Beso", "concept": "Bar/Nightclub", "sf": "5k - 6k SF", "submarket": "Downtown", "county": "San Diego County", "liquor": "Type 48 Full Liquor", "type": "Restaurant Buyer", "tier": "gold"}, {"id": "8156", "name": "Micah Goldfarb", "company": "Greenspot Salad Company", "concept": "Fast Casual", "sf": "1k - 2k SF", "submarket": "Coastal", "county": "San Diego County", "liquor": "Type 41 Beer & Wine", "type": "Local", "tier": "gold"}, {"id": "42255", "name": "Sandra Cardet", "company": "Havana Grill", "concept": "Full Service", "sf": "2K - 3K SF", "submarket": "North County", "county": "San Diego County", "liquor": "", "type": "Local", "tier": "gold"}, {"id": "27239690819", "name": "Jeff Hansson", "company": "Harland Brewing", "concept": "Brewery", "sf": "2K - 3K SF;3k - 4k SF;4k - 5k SF;5k - 6k SF;7 - 10k SF;10k SF +", "submarket": "North County;Inland", "county": "San Diego County", "liquor": "", "type": "Local", "tier": "gold"}, {"id": "102146226776", "name": "Paul Nishiyama", "company": "Better Buzz Coffee", "concept": "Fast Casual", "sf": "1k - 2k SF;2K - 3K SF", "submarket": "", "county": "San Diego County", "liquor": "", "type": "National", "tier": "gold"}, {"id": "91681154482", "name": "Edward Paula", "company": "", "concept": "Full Service", "sf": "2K - 3K SF;3k - 4k SF;4k - 5k SF", "submarket": "", "county": "San Diego County", "liquor": "Type 47 Full Liquor", "type": "Local", "tier": "gold"}, {"id": "105626998427", "name": "Jeremy Madix", "company": "", "concept": "Full Service", "sf": "2K - 3K SF;3k - 4k SF", "submarket": "", "county": "San Diego County", "liquor": "Type 41 Beer & Wine", "type": "Local", "tier": "gold"}, {"id": "56465886361", "name": "Javier Equihua", "company": "", "concept": "Full Service", "sf": "1k - 2k SF;2K - 3K SF", "submarket": "", "county": "San Diego County", "liquor": "Type 47 Full Liquor", "type": "Regional", "tier": "gold"}, {"id": "99051973212", "name": "Jimmy Silva", "company": "Jaunt Coffee", "concept": "Quick Service", "sf": "1k - 2k SF", "submarket": "", "county": "San Diego County", "liquor": "", "type": "Local", "tier": "gold"}, {"id": "7183", "name": "Paul Frederick", "company": "Eureka! Restaurant Group", "concept": "Full Service", "sf": "3k - 4k SF", "submarket": "", "county": "San Diego County", "liquor": "Type 47 Full Liquor", "type": "Regional", "tier": "gold"}, {"id": "9129", "name": "Akash Kapoor", "company": "Curry Up Now", "concept": "Fast Casual;Full Service", "sf": "2K - 3K SF", "submarket": "", "county": "San Diego County", "liquor": "Type 47 Full Liquor", "type": "Regional", "tier": "gold"}, {"id": "7777", "name": "Justin Nedelman", "company": "Eureka! Restaurant Group", "concept": "", "sf": "4k - 5k SF", "submarket": "", "county": "San Diego County", "liquor": "Type 47 Full Liquor", "type": "Regional", "tier": "gold"}, {"id": "11613", "name": "Tammy Caliberti", "company": "J. Carter's", "concept": "Bar/Nightclub;Fine Dining;Full Service", "sf": "4k - 5k SF", "submarket": "", "county": "San Diego County", "liquor": "Type 47 Full Liquor", "type": "Local", "tier": "gold"}, {"id": "54851", "name": "Sadro Lattenero", "company": "Nado Republic", "concept": "Full Service", "sf": "2K - 3K SF;3k - 4k SF;4k - 5k SF", "submarket": "North County;Uptown;Coastal;Downtown", "county": "San Diego County", "liquor": "Type 47 Full Liquor", "type": "Local", "tier": "gold"}];
+let PROPERTIES=[];
+const SUBMARKET_MAP={"Downtown": ["Downtown", "Gaslamp", "East Village", "Little Italy", "Barrio Logan"], "Uptown": ["Hillcrest", "North Park", "Normal Heights", "South Park", "College Area", "Rolando Village"], "Mid-Cities Urban": ["Kearny Mesa", "Mission Valley", "Serra Mesa", "Grantville", "Morena"], "North County": ["Carlsbad", "Encinitas", "Oceanside", "Vista", "San Marcos", "Solana Beach", "Del Mar", "Rancho Bernardo", "Carmel Valley", "Poway", "Escondido", "4S Ranch", "Carmel Mountain Ranch", "Leucadia", "La Costa", "Rancho Santa Fe"], "Coastal": ["La Jolla", "Pacific Beach", "Ocean Beach", "Point Loma", "Imperial Beach", "Solana Beach", "Del Mar"], "South County": ["Chula Vista", "National City", "Imperial Beach", "Palm City"], "Inland": ["El Cajon", "La Mesa", "Santee", "Tierrasanta", "Scripps Ranch", "Mira Mesa", "Clairemont Mesa"]};
+</script>
+
+<div class="topbar">
+  <div style="display:flex;align-items:baseline">
+    <span class="brand-name">MATCHBOARD</span>
+    <span class="brand-sub">Location Matters · SD · LA · OC · 102 Contacts · 515 Properties</span>
+  </div>
+  <div class="topbar-stats">
+    <div class="stat"><div class="stat-val" id="stat-t">0</div><div class="stat-label">Shown</div></div>
+    <div class="stat"><div class="stat-val" id="stat-p">515</div><div class="stat-label">Properties</div></div>
+    <div class="stat"><div class="stat-val" id="stat-m">—</div><div class="stat-label">Strong matches</div></div>
+    <div style="display:flex;gap:2px;background:var(--bg3);border-radius:3px;padding:2px">
+      <button id="mode-tenant" onclick="setMode('tenant')" style="padding:5px 14px;font-family:var(--narrow);font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;border:none;border-radius:2px;cursor:pointer;background:var(--gold);color:#0e0f0c;transition:all .15s">Tenants</button>
+      <button id="mode-property" onclick="setMode('property')" style="padding:5px 14px;font-family:var(--narrow);font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;border:none;border-radius:2px;cursor:pointer;background:none;color:var(--muted);transition:all .15s">Properties</button>
+    </div>
+    <button class="run-btn" onclick="runAll()">▶ Run All</button>
+  </div>
+</div>
+
+<div id="load-banner" style="display:none;align-items:center;gap:10px;padding:7px 20px;background:var(--blue-bg);border-bottom:1px solid rgba(91,155,212,.3);font-family:var(--narrow);font-size:11px;color:var(--blue)">
+  <div style="width:14px;height:14px;border:2px solid var(--blue);border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;flex-shrink:0"></div>
+  Loading live property feed from Google Sheets...
+</div>
+<style>@keyframes spin{{to{{transform:rotate(360deg)}}}}</style>
+<div class="main">
+  <div class="left" style="position:relative;overflow:hidden">
+    <!-- TENANT PANEL -->
+    <div id="tenant-panel" style="display:flex;flex-direction:column;height:100%;overflow-y:auto">
+    <div class="panel-header">
+      <div class="panel-title">Contacts with SF + Market Data</div>
+      <input class="search-input" type="text" placeholder="Search name or company..." oninput="renderList(this.value)" id="tenant-search">
+    <div style="display:flex;gap:4px;margin-top:6px">
+      <button onclick="setSortMode('matches')" id="sort-matches" style="flex:1;padding:4px 6px;font-family:var(--narrow);font-size:9px;letter-spacing:.08em;text-transform:uppercase;border-radius:2px;border:1px solid var(--gold);background:rgba(201,168,76,.15);color:var(--gold);cursor:pointer">▼ Most Matches</button>
+      <button onclick="setSortMode('data')" id="sort-data" style="flex:1;padding:4px 6px;font-family:var(--narrow);font-size:9px;letter-spacing:.08em;text-transform:uppercase;border-radius:2px;border:1px solid var(--border2);background:none;color:var(--muted);cursor:pointer">Data Quality</button>
+    </div>
+    </div>
+    <div class="filter-pills" id="pills"></div>
+    <div id="tenant-list"></div>
+  </div><!-- end tenant-panel -->
+
+    <!-- PROPERTY PANEL -->
+    <div id="property-panel" style="display:none;height:100%;overflow-y:auto;flex-direction:column">
+      <div class="panel-header" style="position:sticky;top:0;background:var(--bg2);z-index:10;flex-shrink:0">
+        <div class="panel-title">Property Inventory <span style="color:var(--muted2);font-size:9px">(515 listings)</span></div>
+        <input class="search-input" type="text" placeholder="Search address or submarket..." oninput="filterPropsInput(this.value)">
+        <div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap">
+          <button onclick="setPropType('all')" id="pt-all" style="flex:1;padding:3px 6px;font-family:var(--narrow);font-size:9px;letter-spacing:.08em;text-transform:uppercase;border-radius:2px;border:1px solid var(--gold);background:rgba(201,168,76,.15);color:var(--gold);cursor:pointer">All</button>
+          <button onclick="setPropType('lease')" id="pt-lease" style="flex:1;padding:3px 6px;font-family:var(--narrow);font-size:9px;letter-spacing:.08em;text-transform:uppercase;border-radius:2px;border:1px solid var(--border2);background:none;color:var(--muted);cursor:pointer">Lease</button>
+          <button onclick="setPropType('new_construction')" id="pt-new" style="flex:1;padding:3px 6px;font-family:var(--narrow);font-size:9px;letter-spacing:.08em;text-transform:uppercase;border-radius:2px;border:1px solid var(--border2);background:none;color:var(--muted);cursor:pointer">New Build</button>
+          <button onclick="setPropType('business_sale')" id="pt-biz" style="flex:1;padding:3px 6px;font-family:var(--narrow);font-size:9px;letter-spacing:.08em;text-transform:uppercase;border-radius:2px;border:1px solid var(--border2);background:none;color:var(--muted);cursor:pointer">Biz Sale</button>
+        </div>
+      </div>
+      <div id="prop-list-inner" style="flex:1;overflow-y:auto"></div>
+    </div><!-- end property-panel -->
+
+  </div><!-- end left -->
+  <div class="right" id="right-panel">
+    <div class="empty">
+      <div class="empty-title">Select a Contact</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.8">
+        103 contacts with SF + market data.<br>
+        ⭐ Gold = SF + submarket (sharpest matches)<br>
+        ◉ Silver = SF only (all markets shown)<br><br>
+        <span style="display:inline-block;width:10px;height:10px;background:var(--blue);border-radius:2px;margin-right:4px"></span><span style="font-family:var(--narrow);font-size:11px">New Build</span>&nbsp;
+        <span style="display:inline-block;width:10px;height:10px;background:var(--purple);border-radius:2px;margin-right:4px;margin-left:8px"></span><span style="font-family:var(--narrow);font-size:11px">Biz Sale</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-title">Send Site Survey</div>
+    <div class="modal-sub" id="msub"></div>
+    <div class="modal-preview" id="mprev"></div>
+    <div class="modal-channels">
+      <button class="ch-toggle on" id="ch-email" onclick="toggleCh('email')">✉ Email</button>
+      <button class="ch-toggle on" id="ch-sms" onclick="toggleCh('sms')">💬 SMS</button>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeModal()">Cancel</button>
+      <button class="modal-send" onclick="confirmSend()">Send Now</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const SF_MAP={"1k - 2k SF":{min:1000,max:2000},"2K - 3K SF":{min:2000,max:3000},"3k - 4k SF":{min:3000,max:4000},"4k - 5k SF":{min:4000,max:5000},"5k - 6k SF":{min:5000,max:6000},"7 - 10k SF":{min:7000,max:10000},"10k SF +":{min:10000,max:999999},"2K - 10k+ SF":{min:2000,max:999999},"1k - 3K SF":{min:1000,max:3000},"1k - 4k SF":{min:1000,max:4000}};
+
+function parseSF(s){
+  if(!s)return{min:0,max:999999,has:false};
+  let min=999999,max=0;
+  s.split(';').forEach(x=>{const r=SF_MAP[x.trim()];if(r){min=Math.min(min,r.min);max=Math.max(max,r.max);}});
+  return min===999999?{min:0,max:999999,has:false}:{min,max,has:true};
+}
+
+function submatches(tenantSub, propSub, propCity){
+  if(!tenantSub) return {match:false, partial:false};
+  const ps=(propSub+' '+propCity).toLowerCase();
+  const parts=tenantSub.split(';').map(s=>s.trim());
+  for(const part of parts){
+    const pl=part.toLowerCase();
+    // direct substring match
+    if(ps.includes(pl)) return {match:true,partial:false};
+    // expand via SUBMARKET_MAP
+    const key=Object.keys(SUBMARKET_MAP).find(k=>k.toLowerCase()===pl);
+    if(key){
+      const areas=SUBMARKET_MAP[key].map(a=>a.toLowerCase());
+      if(areas.some(a=>ps.includes(a))) return {match:true,partial:false};
+    }
+  }
+  return {match:false,partial:false};
+}
+
+function scoreMatch(t,p){
+  // County gate: LA/OC props only match contacts who want that county
+  const pCounty = p.county || 'San Diego County';
+  const tCounty = t.county || 'San Diego County';
+  if(pCounty !== 'San Diego County'){
+    const wantsCounty = tCounty.includes(pCounty);
+    if(!wantsCounty) return {score:0, elim:true, criteria:[{label:'County',pass:false,hard:true}]};
+  }
+
+  const tSF=parseSF(t.sf);
+  let sfPass=true,sfWarn=false;
+  if(tSF.has&&p.sfMax>0){
+    const ok=p.sfMax>=tSF.min&&p.sfMin<=tSF.max;
+    const close=p.sfMax>=tSF.min*.8&&p.sfMin<=tSF.max*1.2;
+    if(!ok&&!close)sfPass=false;
+    else if(!ok&&close)sfWarn=true;
+  }
+  // Liquor not used as a matching condition — informational only
+  const liqPass=true;
+  const hasSub=!!(t.submarket&&t.submarket.trim());
+  const subResult=hasSub?submatches(t.submarket,p.submarket,p.city):{match:false};
+  const subPass=!hasSub||subResult.match;
+
+  let elim=false;
+  const criteria=[];
+  if(!sfPass)elim=true;
+  criteria.push({label:'SF',pass:!tSF.has||sfPass,warn:sfWarn,missing:!tSF.has,hard:true});
+  if(hasSub&&!subPass)elim=true;
+  criteria.push({label:'Submarket',pass:subPass,missing:!hasSub,hard:hasSub});
+  if(!liqPass)elim=true;
+  // Liquor removed from criteria display
+  if(p.patio)criteria.push({label:'Patio ✓',pass:true});
+
+  let score=0;
+  if(!elim){
+    if(hasSub&&subPass)score+=30;
+    else if(!hasSub)score+=12;
+    if(!tSF.has)score+=10;
+    else if(!sfWarn)score+=25;
+    else score+=12;
+    score+=15;score+=13;score+=7;
+    if(p.type==='new_construction')score+=3;
+  }
+  return{score:elim?0:Math.min(score,100),elim,criteria};
+}
+
+function getColor(s){return s>=75?'#4caf7d':s>=50?'#d4833a':'#e05252';}
+function getWord(s,e){if(e||s===0)return'';return s>=75?'Strong':s>=50?'Possible':'Weak';}
+
+let activeTenant=null,activeFilter='all',activeConcept='All',sortMode='matches',channels={email:true,sms:true};
+const COLORS=['av0','av1','av2','av3','av4','av5'];
+function avCol(id){return COLORS[(Math.abs(parseInt(id.slice(-4))||0))%6];}
+function initials(n){const p=n.trim().split(' ');return(p[0]?p[0][0]:'?')+(p[1]?p[1][0]:'');}
+
+let appMode = 'tenant';
+let activeProperty = null;
+let propSearch = '';
+let propConceptFilter = 'All';
+let propTypeFilter = 'all';
+
+function setMode(mode){
+  appMode = mode;
+  document.getElementById('mode-tenant').style.background = mode==='tenant'?'var(--gold)':'none';
+  document.getElementById('mode-tenant').style.color = mode==='tenant'?'#0e0f0c':'var(--muted)';
+  document.getElementById('mode-property').style.background = mode==='property'?'var(--gold)':'none';
+  document.getElementById('mode-property').style.color = mode==='property'?'#0e0f0c':'var(--muted)';
+  if(mode==='property') renderPropertyMode();
+  else renderTenantMode();
+}
+
+function renderTenantMode(){
+  document.getElementById('tenant-panel').style.display='flex';
+  document.getElementById('tenant-panel').style.flexDirection='column';
+  document.getElementById('property-panel').style.display='none';
+  buildPills();
+  renderList(document.querySelector('#tenant-search')?document.querySelector('#tenant-search').value:'');
+  if(activeTenant) renderDetail();
+  else document.getElementById('right-panel').innerHTML=`<div class="empty"><div class="empty-title">Select a Tenant</div><div style="font-size:13px;color:var(--muted);line-height:1.7">Pick a contact to match against all properties.</div></div>`;
+}
+
+function renderPropertyMode(){
+  document.getElementById('tenant-panel').style.display='none';
+  document.getElementById('property-panel').style.display='flex';
+  document.getElementById('property-panel').style.flexDirection='column';
+  renderPropList();
+  document.getElementById('right-panel').innerHTML=`<div class="empty"><div class="empty-title">Select a Property</div><div style="font-size:13px;color:var(--muted);line-height:1.7">Pick a listing to see which tenants<br>in your network are the best match.</div></div>`;
+}
+
+function filterProps(val){
+  propSearch = val;
+  renderPropList();
+}
+function filterPropsInput(val){
+  propSearch = val;
+  renderPropList();
+}
+
+function setPropType(type){
+  propTypeFilter = type;
+  ['all','lease','new_construction','business_sale'].forEach(t=>{
+    const btn = document.getElementById('pt-'+t.replace('_construction','').replace('business_',''));
+    if(!btn) return;
+    const active = type===t;
+    btn.style.borderColor = active?'var(--gold)':'var(--border2)';
+    btn.style.background = active?'rgba(201,168,76,.15)':'none';
+    btn.style.color = active?'var(--gold)':'var(--muted)';
+  });
+  renderPropList();
+}
+
+function renderPropList(){
+  const filtered = PROPERTIES.filter(p=>{
+    const ms = !propSearch || p.name.toLowerCase().includes(propSearch.toLowerCase()) ||
+               (p.submarket||'').toLowerCase().includes(propSearch.toLowerCase()) ||
+               (p.city||'').toLowerCase().includes(propSearch.toLowerCase());
+    const mt = propTypeFilter==='all' || p.type===propTypeFilter;
+    return ms && mt;
+  });
+
+  const icons = {lease:'Lease',new_construction:'New',business_sale:'Biz'};
+  const iconClass = {lease:'pi-lease',new_construction:'pi-new',business_sale:'pi-biz'};
+
+  document.getElementById('prop-list-inner').innerHTML = filtered.map(p=>`
+    <div class="prop-item ${activeProperty&&activeProperty.id===p.id?'active':''}" onclick="selectProperty(${p.id})">
+      <div class="prop-icon ${iconClass[p.type]||'pi-lease'}">${icons[p.type]||'?'}</div>
+      <div class="t-info">
+        <div class="t-name" style="font-size:11px">${p.name}</div>
+        <div class="t-company">${p.submarket||p.city}</div>
+        <div class="t-meta">${p.sfDisplay||'SF unknown'} · ${p.rent||'Negotiable'}${p.dateListed?' · '+p.dateListed:''}</div>
+      </div>
+      <div>
+        <div class="t-count" style="font-size:14px;color:${activeProperty&&activeProperty.id===p.id?'var(--gold)':'var(--muted2)'}">${p.county!=='San Diego County'?'↗':''}</div>
+      </div>
+    </div>`).join('');
+}
+
+function selectProperty(id){
+  activeProperty = PROPERTIES.find(p=>p.id===id);
+  renderPropList();
+  renderPropertyDetail();
+}
+
+function renderPropertyDetail(){
+  if(!activeProperty) return;
+  const p = activeProperty;
+
+  // Score all contacts against this property
+  const results = CONTACTS.map(t=>{
+    // Reverse score: how well does this property match the tenant?
+    const tSF = parseSF(t.sf);
+    let sfPass=true, sfWarn=false;
+    if(tSF.has && p.sfMax>0){
+      const ok = p.sfMax>=tSF.min && p.sfMin<=tSF.max;
+      const close = p.sfMax>=tSF.min*.8 && p.sfMin<=tSF.max*1.2;
+      if(!ok&&!close) sfPass=false;
+      else if(!ok&&close) sfWarn=true;
+    }
+    const pCounty = p.county||'San Diego County';
+    const tCounty = t.county||'San Diego County';
+    const countyOk = pCounty==='San Diego County' || tCounty.includes(pCounty);
+    const hasSub = !!(t.submarket&&t.submarket.trim());
+    const subResult = hasSub ? submatches(t.submarket, p.submarket, p.city) : {match:false};
+    const subPass = !hasSub || subResult.match;
+
+    let elim = false;
+    if(!sfPass || !countyOk) elim = true;
+
+    let score = 0;
+    if(!elim){
+      if(hasSub&&subPass) score+=30; else if(!hasSub) score+=12;
+      if(!tSF.has) score+=10; else if(!sfWarn) score+=25; else score+=12;
+      score+=15; score+=13; score+=7;
+    }
+    return {tenant:t, score:elim?0:Math.min(score,100), elim, sfWarn, subPass, hasSub};
+  }).sort((a,b)=>b.score-a.score);
+
+  const strong = results.filter(r=>r.score>=75).length;
+  const possible = results.filter(r=>r.score>=50&&r.score<75).length;
+  const typeLabel = p.type==='new_construction'?'New Construction':p.type==='business_sale'?'Business Sale':'For Lease';
+  const countyLabel = p.county&&p.county!=='San Diego County'?` · ${p.county.replace(' County','')}`:'';
+
+  document.getElementById('right-panel').innerHTML = `
+    <div class="detail-header">
+      <div class="d-name">${p.name}</div>
+      <div class="d-company">${p.submarket||''} · ${p.city}${countyLabel}</div>
+      <div class="d-concept">${typeLabel}</div>
+      <div class="req-row">
+        ${p.sfDisplay?`<div><div class="req-label">Size</div><div class="req-value">${p.sfDisplay}</div></div>`:''}
+        ${p.rent?`<div><div class="req-label">Rent</div><div class="req-value">${p.rent}</div></div>`:''}
+        ${p.patio?`<div><div class="req-label">Patio</div><div class="req-value">Yes</div></div>`:''}
+        ${p.broker?`<div><div class="req-label">Broker</div><div class="req-value">${p.broker}</div></div>`:''}
+        ${p.dateListed?`<div><div class="req-label">Listed</div><div class="req-value">${p.dateListed}</div></div>`:''}
+        ${p.brochure&&p.brochure!='nan'?`<div><div class="req-label">Brochure</div><div class="req-value"><a href="${p.brochure}" target="_blank" style="color:var(--gold)">Open PDF ↗</a></div></div>`:''}
+      </div>
+      ${p.notes&&p.notes!='nan'?`<div style="font-family:var(--narrow);font-size:11px;color:var(--muted);font-style:italic;margin-top:6px">${p.notes}</div>`:''}
+    </div>
+    <div class="section-bar">
+      <div class="section-bar-title">${results.filter(r=>r.score>0).length} tenants scored · ${strong} strong · ${possible} possible</div>
+    </div>
+    <div class="props" style="gap:8px">
+      ${results.filter(r=>r.score>0).slice(0,60).map(r=>renderTenantMatchCard(r)).join('')}
+      ${results.filter(r=>r.score>0).length>60?`<div style="padding:12px;text-align:center;font-family:var(--narrow);font-size:11px;color:var(--muted)">${results.filter(r=>r.score>0).length-60} more tenants scored</div>`:''}
+    </div>`;
+}
+
+function renderTenantMatchCard(r){
+  const {tenant:t, score:s, sfWarn, subPass, hasSub} = r;
+  const color = getColor(s);
+  const word = getWord(s, false);
+  const circ = 2*Math.PI*18;
+  const dash = (s/100)*circ;
+  const avClass = COLORS[(Math.abs(parseInt(t.id.slice(-3))||0))%6];
+
+  return `<div class="tenant-match-card">
+    <div class="tmc-score">
+      <div class="score-ring">
+        <svg width="44" height="44" viewBox="0 0 44 44">
+          <circle fill="none" stroke="var(--bg4)" stroke-width="3" cx="22" cy="22" r="18"/>
+          <circle fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round" cx="22" cy="22" r="18" stroke-dasharray="${dash} ${circ}" transform="rotate(-90 22 22)"/>
+        </svg>
+        <div class="score-num" style="color:${color}">${Math.round(s)}</div>
+      </div>
+      <div class="score-word" style="color:${color}">${word}</div>
+    </div>
+    <div class="tmc-body">
+      <div class="tmc-name"><a href="https://app.hubspot.com/contacts/43543939/record/0-1/${t.id}" target="_blank" style="color:inherit;text-decoration:none">${t.name}</a></div>
+      ${t.company?`<div class="tmc-company">${t.company}</div>`:''}
+      <div class="tmc-specs">
+        <div class="spec"><div class="spec-label">Concept</div><div class="spec-value" style="font-size:10px">${(t.concept||'Unknown').split(';')[0]}</div></div>
+        <div class="spec"><div class="spec-label">SF Need</div><div class="spec-value" style="font-size:10px">${t.sf?t.sf.split(';')[0]:'Unknown'}</div></div>
+        <div class="spec"><div class="spec-label">Market</div><div class="spec-value" style="font-size:10px;color:${subPass?'var(--green)':'var(--amber)'}">${t.submarket||'Any'}</div></div>
+        <div class="spec"><div class="spec-label">Type</div><div class="spec-value" style="font-size:10px">${t.type||'—'}</div></div>
+      </div>
+    </div>
+    <div class="tmc-actions">
+      <button class="paction send" style="flex:1;display:flex;align-items:center;justify-content:center;font-family:var(--narrow);font-size:10px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;background:none;border:none;color:var(--muted);transition:all .1s" onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='var(--muted)'" onclick="openModalForTenant(t, ${activeProperty.id})">Send ↗</button>
+      <div class="pdiv"></div>
+      <button class="paction" style="flex:1;display:flex;align-items:center;justify-content:center;font-family:var(--narrow);font-size:10px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;background:none;border:none;color:var(--muted)" onclick="window.open('https://app.hubspot.com/contacts/43543939/record/0-1/${t.id}','_blank')">CRM ↗</button>
+    </div>
+  </div>`;
+}
+
+function openModalForTenant(t, propId){
+  const prop = PROPERTIES.find(p=>p.id===propId);
+  if(!prop||!t) return;
+  const fn = t.name.split(' ')[0];
+  document.getElementById('msub').textContent = `To: ${t.name}${t.company?' ('+t.company+')':''}`;
+  document.getElementById('mprev').textContent =
+    `Email: "Hi ${fn}, I have a space in ${prop.submarket||prop.city} that looks like a strong fit — ${prop.sfDisplay||'see details'} at ${prop.rent}. Worth a quick look?"
+
+SMS: "Hey ${fn}, it's Mike — found a spot in ${prop.submarket||prop.city} matching your requirements. Take a look: [link]. Interested or pass?"`;
+  channels={email:true,sms:true};
+  ['ch-email','ch-sms'].forEach(id=>document.getElementById(id).classList.add('on'));
+  document.getElementById('modal').classList.add('open');
+}
+
+function setSortMode(mode){
+  sortMode=mode;
+  document.getElementById('sort-matches').style.borderColor=mode==='matches'?'var(--gold)':'var(--border2)';
+  document.getElementById('sort-matches').style.background=mode==='matches'?'rgba(201,168,76,.15)':'none';
+  document.getElementById('sort-matches').style.color=mode==='matches'?'var(--gold)':'var(--muted)';
+  document.getElementById('sort-data').style.borderColor=mode==='data'?'var(--gold)':'var(--border2)';
+  document.getElementById('sort-data').style.background=mode==='data'?'rgba(201,168,76,.15)':'none';
+  document.getElementById('sort-data').style.color=mode==='data'?'var(--gold)':'var(--muted)';
+  renderList(document.querySelector('.search-input').value);
+}
+function buildPills(){
+  const all=['All',...[...new Set(CONTACTS.flatMap(c=>(c.concept||'').split(';').map(x=>x.trim())))].filter(Boolean).sort()];
+  document.getElementById('pills').innerHTML=all.map(c=>`<span class="pill ${activeConcept===c?'active':''}" onclick="setConcept('${c}')">${c}</span>`).join('');
+}
+function setConcept(c){activeConcept=c;buildPills();renderList('');}
+
+function renderList(search=''){
+  const filtered=CONTACTS.filter(t=>{
+    const ms=!search||t.name.toLowerCase().includes(search.toLowerCase())||(t.company||'').toLowerCase().includes(search.toLowerCase());
+    const mc=activeConcept==='All'||(t.concept||'').includes(activeConcept);
+    return ms&&mc;
+  }).map(t=>{
+    const results=PROPERTIES.map(p=>scoreMatch(t,p));
+    const strong=results.filter(r=>r.score>=75).length;
+    const possible=results.filter(r=>r.score>=50&&r.score<75).length;
+    return{...t,_strong:strong,_possible:possible};
+  }).sort((a,b)=>{
+    if(sortMode==='matches') return (b._strong*100+b._possible)-(a._strong*100+a._possible);
+    return ((b.submarket?1:0)+(b.sf?1:0))-((a.submarket?1:0)+(a.sf?1:0));
+  });
+
+  document.getElementById('stat-t').textContent=filtered.length;
+
+  let html='';
+  filtered.forEach(t=>{
+    const strong=t._strong||0;
+    const possible=t._possible||0;
+    const countColor=strong>0?'var(--gold)':possible>0?'var(--amber)':'var(--muted2)';
+    const avClass=COLORS[Math.abs(parseInt(t.id.slice(-3))||0)%6];
+    html+=`<div class="tenant-item ${activeTenant&&activeTenant.id===t.id?'active':''}" onclick="selectTenant('${t.id}')">
+      <div class="av ${avClass}">${initials(t.name).toUpperCase()}</div>
+      <div class="t-info">
+        <div class="t-name"><a href="https://app.hubspot.com/contacts/43543939/record/0-1/${t.id}" target="_blank" style="color:inherit;text-decoration:none" onclick="event.stopPropagation()">${t.name}</a></div>
+        ${t.company?`<div class="t-company">${t.company}</div>`:''}
+        <div class="t-meta">${(t.concept||'').split(';')[0]||'No concept'} · ${t.submarket||'No market'}</div>
+      </div>
+      <div>
+        <div class="t-count" style="color:${countColor}">${strong>0?strong:possible}</div>
+        <div class="t-clabel">${strong>0?'strong':possible>0?'poss':'match'}</div>
+      </div>
+    </div>`;
+  });
+  document.getElementById('tenant-list').innerHTML=html;
+}
+
+function selectTenant(id){
+  activeTenant=CONTACTS.find(t=>t.id===id);
+  activeFilter='all';
+  renderList(document.querySelector('.search-input').value);
+  renderDetail();
+}
+
+function renderDetail(){
+  if(!activeTenant)return;
+  const t=activeTenant;
+  const results=PROPERTIES.map(p=>Object.assign({prop:p},scoreMatch(t,p))).sort((a,b)=>b.score-a.score);
+  const strong=results.filter(r=>r.score>=75).length;
+  const possible=results.filter(r=>r.score>=50&&r.score<75).length;
+  document.getElementById('stat-m').textContent=strong;
+
+  let filtered=results;
+  if(activeFilter==='strong')filtered=results.filter(r=>r.score>=75);
+  else if(activeFilter==='possible')filtered=results.filter(r=>r.score>=50&&r.score<75);
+  else if(activeFilter==='patio')filtered=results.filter(r=>r.prop.patio&&r.score>0);
+  else if(activeFilter==='new')filtered=results.filter(r=>r.prop.type==='new_construction'&&r.score>0);
+  else if(activeFilter==='biz')filtered=results.filter(r=>r.prop.type==='business_sale'&&r.score>0);
+  else filtered=results.filter(r=>r.score>0);
+
+  document.getElementById('right-panel').innerHTML=`
+    <div class="detail-header">
+      <div class="d-name">${t.name}</div>
+      ${t.company?`<div class="d-company">${t.company}</div>`:''}
+      <div class="d-concept">${(t.concept||'Unknown concept').replace(/;/g,' · ')}</div>
+      <div class="req-row">
+        <div><div class="req-label">SF Range</div><div class="${t.sf?'req-value':'req-missing'}">${t.sf?t.sf.replace(/;/g,' / '):'Unknown'}</div></div>
+        <div><div class="req-label">Submarket</div><div class="${t.submarket?'req-value':'req-missing'}">${t.submarket||'Not set'}</div></div>
+        <div><div class="req-label">Liquor</div><div class="req-value">${t.liquor||'None'}</div></div>
+        <div><div class="req-label">Type</div><div class="req-value">${t.type||'Unknown'}</div></div>
+        <div><div class="req-label">Tier</div><div class="req-value" style="color:${t.tier==='gold'?'var(--gold)':'var(--muted)'}">${t.tier==='gold'?'⭐ Gold':'◉ Silver'}</div></div>
+      </div>
+    </div>
+    <div class="section-bar">
+      <div class="section-bar-title">${filtered.length} shown · ${strong} strong · ${possible} possible</div>
+      <div class="ftabs">
+        <button class="ftab ${activeFilter==='all'?'active':''}" onclick="setFilter('all')">All</button>
+        <button class="ftab ${activeFilter==='strong'?'active':''}" onclick="setFilter('strong')">Strong</button>
+        <button class="ftab ${activeFilter==='possible'?'active':''}" onclick="setFilter('possible')">Possible</button>
+        <button class="ftab ${activeFilter==='patio'?'active':''}" onclick="setFilter('patio')">Patio</button>
+        <button class="ftab ${activeFilter==='new'?'active':''}" onclick="setFilter('new')">New Build</button>
+        <button class="ftab ${activeFilter==='biz'?'active':''}" onclick="setFilter('biz')">Biz Sale</button>
+      </div>
+    </div>
+    <div class="props">
+      ${filtered.slice(0,100).map(r=>renderCard(r)).join('')}
+      ${filtered.length>100?`<div style="padding:12px;text-align:center;font-family:var(--narrow);font-size:11px;color:var(--muted)">${filtered.length-100} more — use filters</div>`:''}
+    </div>`;
+}
+
+function renderCard(r){
+  const {prop:p,score:s,elim,criteria}=r;
+  const color=getColor(s);const word=getWord(s,elim);
+  const circ=2*Math.PI*18;const dash=elim?0:(s/100)*circ;
+  const badge=p.type==='new_construction'?'<span class="pbadge badge-new">New Build</span>':p.type==='business_sale'?'<span class="pbadge badge-biz">Biz Sale</span>':'';
+  const countyBadge=(p.county&&p.county!=='San Diego County')?`<span class="pbadge" style="background:rgba(155,127,212,.15);color:#9b7fd4;border:none;font-size:9px">${p.county.replace(' County','')}</span>`:'';
+  const cardClass=p.type==='new_construction'?'pcard new-const':p.type==='business_sale'?'pcard biz-sale':'pcard';
+
+  if(elim)return`<div class="${cardClass}" style="opacity:.3"><div class="pcard-inner">
+    <div class="score-col"><div class="score-ring"><svg width="44" height="44" viewBox="0 0 44 44"><circle fill="none" stroke="var(--bg4)" stroke-width="3" cx="22" cy="22" r="18"/></svg><div class="score-num" style="color:var(--muted2);font-size:11px">—</div></div><div class="score-word" style="color:var(--muted2)">Out</div></div>
+    <div class="pbody"><div class="ptop"><div><div class="p-name">${p.name}</div><div class="p-address">${p.submarket} · ${p.city}</div></div>${badge}</div>
+    <div class="pcriteria">${criteria.filter(c=>!c.pass&&!c.missing).map(c=>`<span class="crit crit-fail">✕ ${c.label}</span>`).join('')}</div></div>
+  </div></div>`;
+
+  return`<div class="${cardClass}"><div class="pcard-inner">
+    <div class="score-col"><div class="score-ring">
+      <svg width="44" height="44" viewBox="0 0 44 44">
+        <circle fill="none" stroke="var(--bg4)" stroke-width="3" cx="22" cy="22" r="18"/>
+        <circle fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round" cx="22" cy="22" r="18" stroke-dasharray="${dash} ${circ}" transform="rotate(-90 22 22)"/>
+      </svg>
+      <div class="score-num" style="color:${color}">${Math.round(s)}</div>
+    </div><div class="score-word" style="color:${color}">${word}</div></div>
+    <div class="pbody">
+      <div class="ptop"><div><div class="p-name">${p.name}</div><div class="p-address">${p.submarket} · ${p.city}</div></div>${badge}</div>
+      <div class="pspecs">
+        ${p.sfDisplay?`<div class="spec"><div class="spec-label">SF</div><div class="spec-value">${p.sfDisplay}</div></div>`:''}
+        ${p.rent&&p.rent!='nan'?`<div class="spec"><div class="spec-label">Rent</div><div class="spec-value">${p.rent}</div></div>`:''}
+        ${p.patio?`<div class="spec"><div class="spec-label">Patio</div><div class="spec-value">Yes</div></div>`:''}
+        ${p.broker?`<div class="spec"><div class="spec-label">Broker</div><div class="spec-value" style="font-size:10px">${p.broker}</div></div>`:''}
+      </div>
+      <div class="pcriteria">${criteria.map(c=>`<span class="crit ${c.missing?'crit-info':c.warn?'crit-warn':c.pass?'crit-pass':'crit-fail'}">${c.missing?'?':c.warn?'~':c.pass?'✓':'✕'} ${c.label}</span>`).join('')}</div>
+      ${p.notes&&p.notes!='nan'?`<div class="pnotes">${p.notes}</div>`:''}
+    </div>
+    <div class="pactions">
+      <button class="paction send" onclick="openModal(${p.id})">Send ↗</button>
+      <div class="pdiv"></div>
+      <button class="paction pass" onclick="logPass('${p.name.replace(/'/g,"\'")}')">Pass</button>
+      <div class="pdiv"></div>
+      ${p.brochure&&p.brochure!='nan'?`<button class="paction" onclick="window.open('${p.brochure}','_blank')">PDF ↗</button>`:`<button class="paction" style="opacity:.3;cursor:default">No PDF</button>`}
+    </div>
+  </div></div>`;
+}
+
+function setFilter(f){activeFilter=f;renderDetail();}
+
+function runAll(){
+  let total=0;
+  CONTACTS.forEach(t=>{total+=PROPERTIES.filter(p=>scoreMatch(t,p).score>=75).length;});
+  document.getElementById('stat-m').textContent=total;
+  showToast(`${total} strong matches across ${CONTACTS.length} contacts & ${PROPERTIES.length} properties`);
+  renderList(document.querySelector('.search-input').value);
+  if(activeTenant)renderDetail();
+}
+
+let sendPropId=null;
+function openModal(id){
+  if(!activeTenant)return;
+  sendPropId=id;
+  const p=PROPERTIES.find(x=>x.id===id);
+  const t=activeTenant;
+  const fn=t.name.split(' ')[0];
+  document.getElementById('msub').textContent=`To: ${t.name}${t.company?' ('+t.company+')':''}`;
+  document.getElementById('mprev').textContent=`Email: "Hi ${fn}, I have a space in ${p.submarket||p.city} that fits your search — ${p.sfDisplay||'see details'} at ${p.rent}. Worth a quick look?"
+
+SMS: "Hey ${fn}, it's Mike — found a spot in ${p.submarket||p.city} matching your requirements. Link: [survey]. Interested or pass?"`;
+  channels={email:true,sms:true};
+  ['ch-email','ch-sms'].forEach(id=>document.getElementById(id).classList.add('on'));
+  document.getElementById('modal').classList.add('open');
+}
+function toggleCh(c){channels[c]=!channels[c];document.getElementById('ch-'+c).classList.toggle('on',channels[c]);}
+function closeModal(){document.getElementById('modal').classList.remove('open');}
+function confirmSend(){
+  closeModal();
+  const ch=[channels.email&&'email',channels.sms&&'SMS'].filter(Boolean).join(' + ');
+  showToast(`Sent to ${activeTenant.name} via ${ch}`);
+}
+function logPass(n){showToast(`Pass logged for ${n}`);}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3500);}
+
+buildPills();renderList();
+
+// ── LIVE PROPERTY FEED ─────────────────────────────────────────────────────
+const PUB_BASE = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQBnm3jcXxjgk3NvT3mTnOS56r7VvFM-js8wJEBTciIx1eVxdo32BQWdabOGYaKUfVgp-3QwOvgRUCV/pub?output=csv";
+const CUTOFF = new Date();
+CUTOFF.setMonth(CUTOFF.getMonth() - 18);
+
+const EXCLUDE_CITIES = new Set(['los angeles','brentwood','hollywood','echo park','silver lake',
+  'westwood','mid-wilshire','west los angeles','north hollywood','sherman oaks','woodland hills',
+  'tarzana','northridge','hawthorne','long beach','pasadena','arcadia','duarte','marina del rey',
+  'sawtelle','agoura hills','culver city','santa monica','venice','el segundo','torrance',
+  'gardena','compton','inglewood','costa mesa','cypress','anaheim','mission viejo','laguna niguel',
+  'irvine','san clemente','huntington beach','brea','garden grove','orange','fullerton',
+  'newport beach','laguna beach','dana point','tustin','santa ana','buena park','stanton',
+  'fountain valley','westminster','aliso viejo','lake forest','yorba linda','placentia',
+  'la habra','rancho santa margarita','ontario','rancho cucamonga','chino hills','chino',
+  'norco','murrieta','temecula','ventura','thousand oaks','bakersfield','hesperia','walnut']);
+
+const LA_CITIES = new Set(['los angeles','brentwood','hollywood','echo park','silver lake',
+  'westwood','mid-wilshire','west los angeles','north hollywood','sherman oaks','woodland hills',
+  'tarzana','northridge','hawthorne','long beach','pasadena','arcadia','duarte','marina del rey',
+  'sawtelle','agoura hills','culver city','santa monica','venice','el segundo','torrance',
+  'gardena','compton','inglewood']);
+
+const OC_CITIES = new Set(['costa mesa','cypress','anaheim','mission viejo','laguna niguel',
+  'irvine','san clemente','huntington beach','brea','garden grove','orange','fullerton',
+  'newport beach','laguna beach','dana point','tustin','santa ana','buena park','stanton',
+  'fountain valley','westminster','aliso viejo','lake forest','yorba linda','placentia',
+  'la habra','rancho santa margarita']);
+
+function getCounty(city) {
+  const c = (city||'').toLowerCase().trim();
+  if (LA_CITIES.has(c)) return 'Los Angeles County';
+  if (OC_CITIES.has(c)) return 'Orange County';
+  if (!EXCLUDE_CITIES.has(c)) return 'San Diego County';
+  return null;
+}
+
+function parseSFNum(s) {
+  if (!s) return {min:0,max:0};
+  const nums = s.replace(/,/g,'').match(/\d+/g);
+  if (!nums) return {min:0,max:0};
+  const ns = nums.map(Number).filter(n=>n>100);
+  if (!ns.length) return {min:0,max:0};
+  return {min:Math.min(...ns), max:Math.max(...ns)};
+}
+
+function parseRentNum(r) {
+  if (!r) return 0;
+  const nums = r.replace(/,/g,'').match(/\d+\.?\d*/g);
+  if (!nums) return 0;
+  for (const n of nums) { const v=parseFloat(n); if(v>1&&v<500) return v; }
+  return 0;
+}
+
+function fmtDate(d) {
+  if (!d) return '';
+  const dt = new Date(d);
+  if (isNaN(dt.getTime()) || dt.getFullYear() < 2000) return '';
+  return dt.toLocaleDateString('en-US', {month:'short', year:'numeric'});
+}
+
+function processSheet(rows, sheetName, propType, applyDateFilter) {
+  let pid = Date.now();
+  const results = [];
+  rows.forEach(row => {
+    // Address is required
+    const addr = (row['Address']||'').trim();
+    if (!addr || addr === 'Address') return;
+
+    // City + county gate
+    const city = (row['City']||'').trim();
+    const county = getCounty(city);
+    if (!county) return;
+
+    // Date filter — parse 'Date Listed' column
+    const dlRaw = (row['Date Listed']||'').trim();
+    let dl = null;
+    if (dlRaw) {
+      dl = new Date(dlRaw);
+      if (isNaN(dl.getTime()) || dl.getFullYear() < 2000) dl = null;
+    }
+
+    // Apply 18-month filter for Closed Restaurants only
+    if (applyDateFilter && dl && dl < CUTOFF) return;
+
+    // SF from 'Size' column
+    const sf = parseSFNum(row['Size']||'');
+
+    // Patio from 'Patio Size ' column (note trailing space in header)
+    const patioVal = (row['Patio Size ']||row['Patio Size']||'').trim();
+    const patio = !!(patioVal && patioVal !== '0');
+
+    // Liquor from notes
+    const notes = ((row['Notes']||'')+(row['Other']||'')).toLowerCase();
+    const hasLiquor = ['type 47','type 41','beer & wine','type 48','liquor'].some(x=>notes.includes(x));
+
+    // Rent — Closed uses 'Asking Rent', Business Sales uses 'Rent'
+    const rentRaw = (row['Asking Rent']||row['Rent']||'').trim();
+
+    // Date display
+    const dateStr = dl ? fmtDate(dl) : '';
+    const dateSortStr = dl ? dl.toISOString().slice(0,10) : '2099-01-01';
+
+    results.push({
+      id: pid++,
+      sheet: sheetName,
+      type: propType,
+      name: addr,
+      address: addr + (city ? ', ' + city : ''),
+      submarket: (row['Submarket']||'').trim(),
+      city,
+      county,
+      sfMin: sf.min,
+      sfMax: sf.max,
+      sfDisplay: (row['Size']||'').trim(),
+      rent: rentRaw || 'Negotiable',
+      rentVal: parseRentNum(rentRaw),
+      patio,
+      liquor: hasLiquor,
+      notes: ((row['Notes']||row['Other']||'').trim()).slice(0,120),
+      broker: (row['Broker']||'').trim(),
+      brochure: (row['Brochure']||'').trim(),
+      dateListed: dateStr,
+      dateSort: dateSortStr,
+      hasDate: !!dl,
+      lat: parseFloat(row['Latitude'])||null,
+      lng: parseFloat(row['Longitude'])||null,
+    });
+  });
+  return results;
+}
+
+async function fetchCSV(sheetName) {
+  const url = PUB_BASE + '&sheet=' + encodeURIComponent(sheetName);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('HTTP ' + res.status + ' for ' + sheetName);
+  const text = await res.text();
+  // Parse CSV manually
+  const lines = text.split('\n');
+  const headers = parseCSVLine(lines[0]);
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    const vals = parseCSVLine(lines[i]);
+    if (!vals[0] || !vals[0].trim()) continue;
+    const obj = {};
+    headers.forEach((h, idx) => { obj[h.trim()] = (vals[idx]||'').trim(); });
+    rows.push(obj);
+  }
+  return rows;
+}
+
+function parseCSVLine(line) {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i+1] === '"') { current += '"'; i++; }
+      else inQuotes = !inQuotes;
+    } else if (ch === ',' && !inQuotes) {
+      result.push(current);
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+  result.push(current);
+  return result;
+}
+
+async function loadProperties() {
+  const banner = document.getElementById('load-banner');
+  if (banner) banner.style.display = 'flex';
+
+  try {
+    const [closed, newConst, bizSales, realEstate] = await Promise.all([
+      fetchCSV('Closed Restaurants for Lease'),
+      fetchCSV('New Construction Restaurant Loc'),
+      fetchCSV('Business Sales'),
+      fetchCSV('Restaurants w Real Estate for S'),
+    ]);
+
+    const allProps = [
+      ...processSheet(closed,      'Closed Restaurants', 'lease',             true),
+      ...processSheet(newConst,    'New Construction',   'new_construction',  false),
+      ...processSheet(bizSales,    'Business Sales',     'business_sale',     false),
+      ...processSheet(realEstate,  'Real Estate Sale',   'business_sale',     false),
+    ];
+
+    PROPERTIES.length = 0;
+    allProps.forEach(p => PROPERTIES.push(p));
+
+    // Update stat
+    document.getElementById('stat-p').textContent = PROPERTIES.length;
+
+    // Update panel count
+    const pLabel = document.querySelector('.panel-title span');
+    if (pLabel) pLabel.textContent = '(' + PROPERTIES.length + ' listings)';
+
+    if (banner) banner.style.display = 'none';
+
+    // Re-render if something is active
+    if (appMode === 'tenant' && activeTenant) renderDetail();
+    if (appMode === 'property') renderPropList();
+
+    console.log('Live feed loaded:', PROPERTIES.length, 'properties');
+  } catch(err) {
+    console.error('Feed error:', err);
+    if (banner) {
+      banner.innerHTML = '⚠ Could not load live feed — using cached data. Check the Apps Script URL.';
+      banner.style.background = 'var(--red-bg)';
+      banner.style.color = 'var(--red)';
+    }
+  }
+}
+
+
+loadProperties();
+</script>
+</body>
+</html>
